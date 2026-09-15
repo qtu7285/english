@@ -132,7 +132,9 @@ When learner history is actually available, reuse learned knowledge intelligentl
 
 ## 6. Pending-answer rule
 
-While a test question is pending, recognize control commands before grading: standalone `.`, `.headword`, and `#username`. Other learner messages are treated as answers.
+While a test question is pending, recognize control commands before grading: standalone `.`, `.g`, `.headword`, and `#username`. Other learner messages are treated as answers.
+
+A message whose trimmed text is exactly `.g` invokes the runtime Git shortcut in `AGENTS.md`. Preserve the pending question and all test state, perform the commit/push operation, and then resume the same question. Never grade `.g`, increment attempts, change first-try status, mark the question completed, or advance the round because of this command.
 
 A message whose trimmed text is exactly `.` is an explicit save command at any time, including while awaiting an initial answer or a corrected re-entry. Route to `SAVE-WORKFLOW.md` section 1.1, save eligible completed progress without another confirmation, and then resume the same pending question. Never grade the dot, increment attempts, change first-try status, mark the pending question completed, or advance the round because of this command. Preserve the question, its number, prior attempts/mistakes, learner/target, and remaining round count throughout saving, including a failed or empty save. This command does not terminate the question as a target/learner switch does.
 

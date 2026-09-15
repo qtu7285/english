@@ -46,6 +46,16 @@ After finishing a word/phrase or `.headword` explanation, when no test answer is
 
 This reminder uses only the visible target and temporary session state; do not load canonical/learner files merely to show it. Wait for the learner's choice, then route an actual test request or target switch through the existing rules. Do not append it to pending test questions, correction/re-entry prompts, or unrelated technical/configuration replies.
 
+### Git shortcut `.g`
+
+When the learner's entire trimmed message is exactly `.g`, treat it as a Git publish command, never as an English answer or a normal learning request.
+
+* If a test question is pending, recognize `.g` before grading; preserve the question, attempts, correction state, and round position, then resume it after the Git operation.
+* Review the worktree, stage the intended verified tutoring-rule/data changes, create one focused commit when there are changes, and push the current branch to its configured upstream remote.
+* If there are no local changes, do not create an empty commit; still verify whether the current branch is synchronized with its upstream and push only if there is an unpushed commit.
+* Report the actual commit and push result. Never claim success when authentication, permissions, network, tests, or push checks fail. Keep local commits intact when push fails and explain the blocker.
+* `.g` is a control command and must not be counted as a test attempt, answer, or completed question. It does not save learner CSV progress unless the Git commit happens to include already-written local CSV changes.
+
 ### Automatic sentence clipboard
 
 The learner requests automatic clipboard writes to use Google Translate's Tap to Translate with less manual selection.
