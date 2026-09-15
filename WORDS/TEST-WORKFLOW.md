@@ -101,7 +101,7 @@ When no test answer is pending:
 - a positive integer starts exactly that many questions;
 - the integer is the current round size, not a change to plan completion thresholds;
 - show only one question at a time;
-- do not reveal the answer or pronunciation before the learner answers.
+- do not reveal the answer or pronunciation in the visible question before the learner answers; the learner-requested automatic clipboard exception in section 9 copies the complete correct sentence at question delivery.
 
 Choose one source mode for the round/target:
 
@@ -153,6 +153,8 @@ For multiple choice or another test type, add only the minimal controls needed f
 
 Do not add filler or preview future questions.
 
+At question delivery, apply section 9's automatic clipboard behavior to the complete correct English sentence. Keep the visible question in its normal test format and add only a brief successful-copy status when appropriate.
+
 ## 8. Grading
 
 For every answer:
@@ -162,7 +164,7 @@ For every answer:
 3. for partial/incorrect, explain only the error that needs fixing;
 4. show the complete correct English sentence and natural Vietnamese meaning;
 5. provide pronunciation only for correct target text, never for the learner's incorrect response;
-6. after a fully correct completion, provide copy output when supported.
+6. apply section 9's clipboard behavior to the complete correct sentence shown in feedback, including partial/incorrect feedback; never copy the learner's incorrect text.
 
 Multiple blanks:
 
@@ -210,7 +212,7 @@ Lỗi: <brief correction>
 👉 Mời bạn nhập lại đáp án đúng.
 ```
 
-Do not provide dedicated copy controls for the correction until re-entry is fully correct.
+The automatic clipboard preference in section 9 also applies to the correct sentence in correction feedback; re-entry is still required before the question counts as completed.
 
 ## 9. Pronunciation and copy capability
 
@@ -224,11 +226,14 @@ Pronunciation fallback:
 
 When both the target answer and complete sentence require pronunciation, provide separate outputs when the platform supports them.
 
-Copy fallback after a fully correct answer:
+Automatic clipboard preference:
 
-1. real native copy control if available;
-2. otherwise separate fenced `text` blocks for the exact reusable English answer and complete sentence;
-3. otherwise clean selectable text.
+- The learner explicitly requests the complete correct English sentence in the clipboard as soon as each new question is presented, before answering, for use with Google Translate's Tap to Translate. Apply the runtime/client `AGENTS.md` automatic sentence clipboard instructions without asking for confirmation each time.
+- Copy the sentence with every blank correctly filled, not the question with blanks or an isolated answer fragment. For other test types, copy the intended correct complete English sentence.
+- This is an intentional exception to the default pre-answer withholding rule. Keep the visible question unchanged; do not add visible answer/pronunciation output before the attempt merely because the clipboard was populated.
+- When feedback displays a complete correct sentence, copy that sentence as well, including correction feedback before re-entry. Do not overwrite it with a separate answer fragment or translation.
+- Automatic clipboard availability does not change grading, attempts, first-try status, completion, or save rules. Do not claim the learner answered without translation/answer assistance, or that they used it, solely from the clipboard write.
+- Prefer an actual clipboard write. If unavailable, use a real native copy control when supported; otherwise show clean selectable text (a fenced block is formatting, not a guaranteed CLI copy button). Report copy success only after the actual operation succeeds, and continue the question if copying fails.
 
 Never copy or pronounce the learner's incorrect response as if it were correct.
 

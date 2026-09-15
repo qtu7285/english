@@ -38,6 +38,18 @@ Immediately provide:
 
 Use native pronunciation/audio when available. Otherwise use the pronunciation fallback defined by the canonical README once it has been loaded; if README is not yet loaded and no native playback capability exists, do not invent a playback control.
 
+### Automatic sentence clipboard
+
+The learner requests automatic clipboard writes to use Google Translate's Tap to Translate with less manual selection.
+
+* When presenting an English example, corrected sentence, or a new test question, automatically copy the complete correct English sentence to the device clipboard in the same turn, without asking again.
+* For a test question, copy the fully completed correct sentence immediately when presenting the question, before the learner answers. This is an explicit learner-requested exception to withholding answers before an attempt; the visible question may still contain blanks. Test timing is governed by `WORDS/TEST-WORKFLOW.md`.
+* Copy only the sentence, preserving punctuation; exclude labels, Markdown, Vietnamese translations, explanations, and unfilled blanks. If several examples appear, copy the main example once rather than overwriting the clipboard repeatedly.
+* Use a real available clipboard capability. On this Termux device, `termux-clipboard-set` has worked; pass the exact sentence through safely quoted standard input, for example `printf '%s' 'She urged me to apply for the job.' | termux-clipboard-set`. Escape arbitrary text safely; never evaluate sentence text as shell code.
+* Complete the clipboard operation as part of delivering the sentence/question. Only report `Đã chép câu đúng.` after the command succeeds. If unavailable or unsuccessful, continue teaching with clean selectable text and briefly state that automatic copying did not succeed; do not invent a copy button or claim success.
+* Clipboard writes require no learner/canonical data reads and do not save learning progress. Preserve FAST_CORE's zero-read startup.
+* Do not claim that copying alone opened Google Translate or displayed its floating control; that depends on the phone's app settings. Stop automatic copying if the learner asks.
+
 ## Canonical-state boundary
 
 The local repository is the only canonical data source. Use Git commits for verified snapshots; do not use Google Drive as a data source.
