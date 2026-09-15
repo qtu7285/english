@@ -38,6 +38,14 @@ Immediately provide:
 
 Use native pronunciation/audio when available. Otherwise use the pronunciation fallback defined by the canonical README once it has been loaded; if README is not yet loaded and no native playback capability exists, do not invent a playback control.
 
+### Next step after a word explanation
+
+After finishing a word/phrase or `.headword` explanation, when no test answer is pending and no test count has already been requested, end with this single line:
+
+👉 Nhập số câu để luyện (ví dụ `5`), hoặc `.từ_mới` để chuyển từ.
+
+This reminder uses only the visible target and temporary session state; do not load canonical/learner files merely to show it. Wait for the learner's choice, then route an actual test request or target switch through the existing rules. Do not append it to pending test questions, correction/re-entry prompts, or unrelated technical/configuration replies.
+
 ### Automatic sentence clipboard
 
 The learner requests automatic clipboard writes to use Google Translate's Tap to Translate with less manual selection.
