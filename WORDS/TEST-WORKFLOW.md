@@ -163,7 +163,7 @@ For every answer:
 2. show the complete correct answer;
 3. for partial/incorrect, explain only the error that needs fixing;
 4. show the complete correct English sentence and natural Vietnamese meaning;
-5. provide pronunciation only for correct target text, never for the learner's incorrect response;
+5. provide pronunciation only for correct target text, never for the learner's incorrect response; when the learner's answer becomes fully correct, immediately speak the complete correct sentence using section 9's automatic read-aloud rule;
 6. apply section 9's clipboard behavior to the complete correct sentence shown in feedback, including partial/incorrect feedback; never copy the learner's incorrect text.
 
 Multiple blanks:
@@ -217,6 +217,16 @@ The automatic clipboard preference in section 9 also applies to the correct sent
 ## 9. Pronunciation and copy capability
 
 Use platform capability rather than platform brand.
+
+Automatic read-aloud after a fully correct answer:
+
+- The learner explicitly requests immediate spoken playback after grading an answer fully correct. Apply this both to a correct first attempt and to a fully correct re-entry after correction, without asking again.
+- Show `✅ Đúng!` and the complete correct sentence, then invoke speech in the same grading turn, before presenting another question. If a tool call must precede the final response, show that feedback in commentary immediately before the call.
+- Speak the complete correct English sentence once per question completion, including all filled blanks; exclude grading labels, Vietnamese translations, explanations, and separate answer fragments. Do not automatically repeat playback when merely summarizing an already completed question.
+- On this Termux device, use the tested native capability `termux-tts-speak -l en -n US -r 0.9 -s MUSIC`, feeding the exact sentence through safely quoted standard input. For example: `printf '%s' 'She urged me to apply for the job.' | termux-tts-speak -l en -n US -r 0.9 -s MUSIC`. Treat sentence text strictly as data, never as shell code.
+- Automatic spoken playback is triggered by fully correct completion, not by the pre-answer clipboard write or partial/incorrect feedback. For partial/incorrect feedback, offer pronunciation through an available control or link; speak directly if the learner explicitly asks, and automatically once their re-entry is fully correct.
+- Wait for the speech command result before reporting that the playback command succeeded. Do not infer that the learner heard it solely from the exit code. If native speech is unavailable or fails, briefly report that and use the pronunciation fallback below; do not block grading or ask the learner to repeat a correct answer.
+- Preserve automatic clipboard behavior independently. Speech does not change grading/history or trigger a local progress save. Stop automatic speech if the learner asks.
 
 Pronunciation fallback:
 
