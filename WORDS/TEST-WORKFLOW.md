@@ -132,9 +132,9 @@ When learner history is actually available, reuse learned knowledge intelligentl
 
 ## 6. Pending-answer rule
 
-While a test question is pending, treat every learner message as the answer except `.headword` and `#username` control commands.
+While a test question is pending, recognize control commands before grading: standalone `.`, `.headword`, and `#username`. Other learner messages are treated as answers.
 
-A literal `.` while a question is pending is an answer, not a checkpoint command.
+A message whose trimmed text is exactly `.` is an explicit save command at any time, including while awaiting an initial answer or a corrected re-entry. Route to `SAVE-WORKFLOW.md` section 1.1, save eligible completed progress without another confirmation, and then resume the same pending question. Never grade the dot, increment attempts, change first-try status, mark the pending question completed, or advance the round because of this command. Preserve the question, its number, prior attempts/mistakes, learner/target, and remaining round count throughout saving, including a failed or empty save. This command does not terminate the question as a target/learner switch does.
 
 If `.headword` or `#username` arrives while a question is pending, stop the active question. If meaningful completed unsaved learner progress exists, route to `SAVE-WORKFLOW.md` before finalizing the switch. If nothing meaningful was completed, switch without forcing a save.
 
@@ -286,7 +286,7 @@ Track fully completed questions since the last successful save.
 
 After 5 unsaved completed questions, remind between questions only:
 
-`💾 Bạn đã có 5 câu test chưa lưu. Nhập . nếu muốn tạo checkpoint cho an toàn.`
+`💾 Bạn đã có 5 câu test chưa lưu. Nhập . để lưu ngay phần đã hoàn thành.`
 
 If the learner continues, continue normally. Remind again at reasonable 5-question milestones (10, 15, ...). Reset only after a confirmed successful save.
 

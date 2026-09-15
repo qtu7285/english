@@ -115,7 +115,7 @@ Read the entire current:
 
 Checkpoint preview should use temporary session state and must not read AGENTS merely to ask whether the learner wants to save.
 
-Only after explicit save approval does SAVE-WORKFLOW load the entire current `WORDS/AGENTS.md` and the concrete target files required for persistence.
+Only after explicit save approval does SAVE-WORKFLOW load the entire current `WORDS/AGENTS.md` and the concrete target files required for persistence. A standalone `.` is explicit approval to save the eligible unsaved session material immediately, even while a test answer is pending; route it to SAVE-WORKFLOW without asking for confirmation again and preserve the pending question.
 
 ### 4.5 Direct technical operation
 
