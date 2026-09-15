@@ -6,7 +6,7 @@ This file is loaded only when the session reaches a checkpoint/save boundary or 
 
 A checkpoint preview does not require `WORDS/AGENTS.md` and should not trigger broad local-file reads.
 
-Only after the learner explicitly agrees to save may the tutor load the entire current `WORDS/AGENTS.md` and perform technical persistence work. A standalone `.` is itself explicit save approval under section 1.1; do not ask for approval a second time.
+Only after the learner explicitly agrees to save may the tutor load the entire current `WORDS/AGENTS.md` and perform technical persistence work. A standalone `.s` is itself explicit save approval under section 1.1; do not ask for approval a second time.
 
 There is one authoritative writer for the tutoring session. Do not let a second agent/task write learner/shared progress concurrently.
 
@@ -14,7 +14,7 @@ There is one authoritative writer for the tutoring session. Do not let a second 
 
 A checkpoint may be triggered by:
 
-- the user entering standalone `.` at any time (already-authorized direct save; use section 1.1);
+- the user entering standalone `.s` at any time (already-authorized direct save; use section 1.1);
 - the end of a completed test round;
 - switching `.headword` or `#username` after meaningful completed unsaved learner/test progress;
 - another state transition that could otherwise lose meaningful unsaved progress.
@@ -23,15 +23,15 @@ Pure stateless `.headword` learning does not force a local-file checkpoint on ev
 
 If there is no meaningful unsaved data, do not ask to save again.
 
-### 1.1 Standalone dot — save now and resume
+### 1.1 `.s` save command — save now and resume
 
-The learner has chosen standalone `.` as the save command. Recognize it when the entire message, after trimming whitespace, is exactly `.`; keep `.headword` as the separate target-switch command.
+The learner has chosen standalone `.s` as the save command. Recognize it when the entire message, after trimming whitespace, is exactly `.s`; keep `.headword` as the separate target-switch command. A standalone `.` has no save meaning.
 
-1. Treat `.` as explicit authorization to save eligible unsaved session material, whether a question is pending, a round has ended, or a checkpoint preview is waiting for approval. Do not ask the section 2 confirmation question again.
-2. If a question is pending, preserve its exact content/reference, number, learner/target, round size and remaining count, prior attempts/mistakes, and initial-answer or correction/re-entry state in session memory. The dot itself is never an answer or an attempt.
+1. Treat `.s` as explicit authorization to save eligible unsaved session material, whether a question is pending, a round has ended, or a checkpoint preview is waiting for approval. Do not ask the section 2 confirmation question again.
+2. If a question is pending, preserve its exact content/reference, number, learner/target, round size and remaining count, prior attempts/mistakes, and initial-answer or correction/re-entry state in session memory. `.s` itself is never an answer or an attempt.
 3. Save only finalized completed learner events and useful eligible shared learning material through sections 4–10, including the content dependencies of completed events. Keep an unfinished question and its unfinished answer path temporary; do not fabricate a HISTORY event, result, or completion for it.
 4. If nothing eligible is unsaved, say `Chưa có dữ liệu mới cần lưu.` and resume the same pending question without writing files or creating an empty commit.
-5. For an actual save, load the required technical rules, write and verify the affected CSV data, and create the verified Git snapshot as required by AGENTS. Preserve partial-save retry state and deduplicate repeated `.` commands through section 9.
+5. For an actual save, load the required technical rules, write and verify the affected CSV data, and create the verified Git snapshot as required by AGENTS. Preserve partial-save retry state and deduplicate repeated `.s` commands through section 9.
 6. Report the actual save outcome, then re-display the same pending question and wait for its answer (or corrected re-entry), without advancing, restarting, or replaying completed-question audio. If saving fails, preserve both unsaved material and the pending question; do not claim success.
 
 The existing preview/confirmation flow below still applies to automatic round-end and risky-transition checkpoints when no explicit save authorization has been given.

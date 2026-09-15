@@ -56,6 +56,10 @@ When the learner's entire trimmed message is exactly `.g`, treat it as a Git pub
 * Report the actual commit and push result. Never claim success when authentication, permissions, network, tests, or push checks fail. Keep local commits intact when push fails and explain the blocker.
 * `.g` is a control command and must not be counted as a test attempt, answer, or completed question. It does not save learner CSV progress unless the Git commit happens to include already-written local CSV changes.
 
+### Save shortcut `.s`
+
+When the learner's entire trimmed message is exactly `.s`, treat it as an immediate save command. It saves eligible completed learner/shared session material to CSV through `SAVE-WORKFLOW.md`, without a second confirmation, then resumes any pending test question. `.s` is never graded as an answer. A standalone `.` has no command meaning and may be treated as ordinary learner input when a test is pending.
+
 ### Automatic sentence clipboard
 
 The learner requests automatic clipboard writes to use Google Translate's Tap to Translate with less manual selection.
