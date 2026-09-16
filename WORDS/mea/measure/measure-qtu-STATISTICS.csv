@@ -1,0 +1,7 @@
+metric,value
+tests_attempted,6
+correct_first_try,2
+mistakes,4
+first_try_rate,0.3333333333333333
+total_attempts,10
+last_practiced,2026-09-16T00:01:56Z

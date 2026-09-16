@@ -1,2 +1,4 @@
 id,form_id,meaning_id,phrase,meaning,type,tier,words,note,status,created_at,created_by,updated_at,updated_by
 p-03gvhnkztgr2zx0r6ntutuawg,f-03gvhnkztbct1f3gp1r5iwf6o,m-03gvhnkztgxh88gh55nnko2tg,take measures,thực hiện các biện pháp,collocation,core,2,,active,2026-09-15T17:18:56Z,qtu,2026-09-15T17:18:56Z,qtu
+p-03gvjubbyedulxfj4efm4g9fh,f-03gvhnkztbct1f3gp1r5iwf6o,m-03gvjubbyedulxfj4ebuc4hpr,measure the room,đo căn phòng,collocation,core,3,,active,2026-09-16T00:01:56Z,qtu,2026-09-16T00:01:56Z,qtu
+p-03gvjubbyedulxfj4ehvlozt0,f-03gvhnkztbct1f3gp1r5iwf6o,m-03gvjubbyedulxfj4eds0imos,measure progress,đo lường tiến bộ,collocation,core,2,,active,2026-09-16T00:01:56Z,qtu,2026-09-16T00:01:56Z,qtu

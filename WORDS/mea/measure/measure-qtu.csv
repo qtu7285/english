@@ -1,2 +1,7 @@
 id,created_at,test_id,answer,result,attempts,first_try,mistake_note,session_id
 h-03gvhnkztgv1fwet4uugz4qol,2026-09-15T17:18:56Z,t-03gvhnkztgtnohx8vrudh7hrb,stricter pollution,partial_corrected,2,FALSE,Initially supplied only “stricter”; omitted “pollution” for the second blank.,s-03gvhnkztgvksgxt98z25juit
+h-03gvjubbyedulxfj4eqe5k18u,2026-09-16T00:01:56Z,t-03gvjubbyedulxfj4empnqn5e,take measures,incorrect_corrected,2,FALSE,Initially answered measure; omitted take and plural -s. Correct re-entry: take measures. Meaning/configuration questions were not attempts.,s-03gvjubbyedulxfj4ejj22tyv
+h-03gvjubbyedulxfj4eusqy6sz,2026-09-16T00:01:56Z,t-03gvjubbyedulxfj4esllnomb,took measures,partial_corrected,2,FALSE,Initially answered take measure; corrected past tense take to took and plural measure to measures.,s-03gvjubbyedulxfj4ejj22tyv
+h-03gvjubbyedulxfj4f1yut4aj,2026-09-16T00:01:56Z,t-03gvjubbyedulxfj4ezyrtogm,taken measures,partial_corrected,2,FALSE,Initially answered take measure; corrected participle take to taken after has and plural measure to measures.,s-03gvjubbyedulxfj4ejj22tyv
+h-03gvjubbyedulxfj4f7f5kwvi,2026-09-16T00:01:56Z,t-03gvjubbyedulxfj4f4u8yl0p,measure,correct,1,TRUE,,s-03gvjubbyedulxfj4ejj22tyv
+h-03gvjubbyedulxfj4fccs5rdh,2026-09-16T00:01:56Z,t-03gvjubbyedulxfj4fabf7zbl,measure,correct,1,TRUE,,s-03gvjubbyedulxfj4ejj22tyv
