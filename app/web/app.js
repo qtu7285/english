@@ -248,6 +248,76 @@ function updateDynamicChoices(choices) {
   });
 }
 
+// Update dynamic context chips (e.g. '3 câu luyện', '5 câu luyện') based on tutoring flow
+function updateContextChips(lastText) {
+  const container = document.getElementById("dynamicContextChips");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!lastText) {
+    // Trang thai ban dau: hien thi tu mau de hoc thu
+    const urgeBtn = document.createElement("button");
+    urgeBtn.type = "button";
+    urgeBtn.className = "chip";
+    urgeBtn.setAttribute("data-send", ".urge");
+    urgeBtn.innerText = ".urge (học thử)";
+    container.appendChild(urgeBtn);
+    return;
+  }
+
+  // Kiem tra neu dang trong mot cau hoi luyen tap (Cau 1/N, Cau 2/N...)
+  const isQuestion = /Câu\s+\d+\/\d+|\[D[1-3]\]|_{2,}/i.test(lastText) && !/Hoàn thành \d+\/\d+ câu/i.test(lastText);
+  if (isQuestion) {
+    // Dang lam test: AN TOAN BO nut chon so cau de tranh hoc vien bam nham lam hong bai test!
+    return;
+  }
+
+  // Kiem tra neu vua hoan thanh vong luyen tap
+  const isCompleted = /Hoàn thành \d+\/\d+ câu/i.test(lastText);
+  if (isCompleted) {
+    const chip3 = document.createElement("button");
+    chip3.type = "button";
+    chip3.className = "chip";
+    chip3.setAttribute("data-send", "3");
+    chip3.innerText = "Luyện tiếp 3 câu";
+    container.appendChild(chip3);
+
+    const chip5 = document.createElement("button");
+    chip5.type = "button";
+    chip5.className = "chip";
+    chip5.setAttribute("data-send", "5");
+    chip5.innerText = "Luyện tiếp 5 câu";
+    container.appendChild(chip5);
+    return;
+  }
+
+  // Kiem tra neu AI vua giai nghia xong tu vung (xuat hien dong [NEXT] Nhap so cau de luyen)
+  const hasNextTestPrompt = /\[NEXT\]\s*Nhập số câu|số câu để luyện/i.test(lastText);
+  if (hasNextTestPrompt) {
+    const chip3 = document.createElement("button");
+    chip3.type = "button";
+    chip3.className = "chip";
+    chip3.setAttribute("data-send", "3");
+    chip3.innerText = "3 câu luyện";
+    container.appendChild(chip3);
+
+    const chip5 = document.createElement("button");
+    chip5.type = "button";
+    chip5.className = "chip";
+    chip5.setAttribute("data-send", "5");
+    chip5.innerText = "5 câu luyện";
+    container.appendChild(chip5);
+
+    const chip10 = document.createElement("button");
+    chip10.type = "button";
+    chip10.className = "chip";
+    chip10.setAttribute("data-send", "10");
+    chip10.innerText = "10 câu";
+    container.appendChild(chip10);
+    return;
+  }
+}
+
 function processLineForAudio(line) {
   if (!line || line.includes("inline-audio-btn") || line.includes("<pre>") || line.includes("<code>")) return line;
 
@@ -507,6 +577,7 @@ function appendMessage(role, text, toolLogs = []) {
     } else {
       updateDynamicChoices([]);
     }
+    updateContextChips(text);
 
     // 2. Audio & Copy action buttons
     const extracted = extractEnglishElements(text);
@@ -817,6 +888,8 @@ clearBtn.onclick = () => {
   if (confirm("Bạn có muốn xóa toàn bộ lịch sử trò chuyện hiện tại không?")) {
     chatMessages.innerHTML = "";
     state.conversation = [];
+    updateDynamicChoices([]);
+    updateContextChips("");
   }
 };
 
@@ -1084,15 +1157,26 @@ window.addEventListener("appinstalled", () => {
 
 // Register PWA Service Worker
 if ('serviceWorker' in navigator) {
+  let swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!swRefreshing) {
+      swRefreshing = true;
+      console.log('[PWA] Service Worker cập nhật phiên bản mới, đang tải lại...');
+      window.location.reload();
+    }
+  });
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((reg) => {
+        // Chu dong kiem tra ban moi moi khi mo app
+        reg.update();
         reg.onupdatefound = () => {
           const installingWorker = reg.installing;
           if (installingWorker) {
             installingWorker.onstatechange = () => {
               if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('[PWA] Đã cập nhật phiên bản mới.');
+                console.log('[PWA] Đã cài đặt xong phiên bản mới.');
               }
             };
           }
@@ -1141,4 +1225,7 @@ if (window.isSecureContext && "serviceWorker" in navigator) {
   }
   connect();
 })();
+
+// Khoi tao chip ngu canh ban dau (hien thi tu mau de hoc thu)
+updateContextChips("");
 

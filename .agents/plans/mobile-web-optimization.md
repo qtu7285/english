@@ -47,6 +47,11 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
   - [x] Tự động theo dõi các tệp trong `app/web/` và gửi tín hiệu cho trình duyệt tải lại ngay lập tức khi phát hiện thay đổi.
   - [x] Không cần Node.js, không cần `node_modules`, giữ nguyên 100% Golang siêu nhẹ và mát máy trên Termux.
 
+- [x] **Bước 9: Chuyển đổi Nút chọn số câu sang Cơ chế Ngữ cảnh Động (Context-Aware Chips)**
+  - [x] Bỏ các nút `3 câu luyện`, `5 câu luyện` cố định ở thanh đáy trong [`index.html`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/index.html).
+  - [x] Trong [`app.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/app.js), chỉ tự động hiện các nút chọn số câu (`3 câu luyện`, `5 câu luyện`, `10 câu`) sau khi AI giải nghĩa xong từ vựng (khi xuất hiện `[NEXT]`).
+  - [x] Khi đang trong bài test (`Câu 1/N`, `Câu 2/N`...): ẩn hoàn toàn các nút chọn số câu, chỉ hiện các phím trắc nghiệm `[A] [B] [C] [D]` để người học tập trung trả lời và tuyệt đối không thể bấm nhầm làm hỏng bài test.
+
 ---
 
 ## 3. Tiêu chuẩn Nghiệm thu
@@ -58,3 +63,4 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
 5. [x] Chạm vào ô nhập liệu không bị phóng to màn hình trên iOS.
 6. [x] Nhập một từ (ví dụ `urge`) tự động gửi `.urge` mà không cần người dùng gõ dấu chấm.
 7. [x] Khi chỉnh sửa file CSS/JS/HTML, trình duyệt tự động cập nhật ngay lập tức nhờ Go Live-Reload.
+8. [x] Nút `3 câu luyện`, `5 câu luyện` chỉ xuất hiện đúng lúc (sau khi giải nghĩa từ), và ẩn hoàn toàn khi đang làm bài test.
