@@ -96,6 +96,7 @@ When the learner's entire trimmed message is exactly `.g`, treat it as a Git pub
 * If there are no local changes, do not create an empty commit; still verify whether the current branch is synchronized with its upstream and push only if there is an unpushed commit.
 * Report the actual commit and push result. Never claim success when authentication, permissions, network, tests, or push checks fail. Keep local commits intact when push fails and explain the blocker.
 * `.g` is a control command and must not be counted as a test attempt, answer, or completed question. It does not save learner CSV progress unless the Git commit happens to include already-written local CSV changes.
+* After completing any system modification, spec authoring, tool enhancement, or skill update, summarize the completed changes and explicitly ask whether the learner wants to commit and push via `.g`: `[CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .g không?`
 
 ### Save shortcut `.s`
 

@@ -124,7 +124,7 @@ In provisional/hybrid generation:
 - use temporary references only; no canonical persistent IDs are required before save;
 - if a strategy gate depends on canonical shared tier coverage or saved learner history that is unavailable, the questions may still run, but do not claim that the plan/strategy completion gate has been satisfied from provisional evidence alone.
 
-For fill-blank (`fb`) questions, use at least two meaningful blanks when natural: one for the target and one for an important collocation/partner word. The Vietnamese context must not directly reveal the missing answers.
+For fill-blank (`fb`) questions, follow the detailed rules in `qln-question-generator` (`.agents/skills/qln-question-generator/SKILL.md`): use at least two meaningful blanks when natural (one for the target and one for an important collocation/partner word). The Vietnamese context must not directly reveal the missing answers.
 
 Prefer common collocations, natural structures, practical communication/work contexts, varied subjects/tenses/situations, and new sentences rather than mechanical repetition.
 
