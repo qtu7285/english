@@ -51,6 +51,42 @@ After finishing a word/phrase or `.headword` explanation, when no test answer is
 
 This reminder uses only the visible target and temporary session state; do not load canonical/learner files merely to show it. Wait for the learner's choice, then route an actual test request or target switch through the existing rules. Do not append it to pending test questions, correction/re-entry prompts, or unrelated technical/configuration replies.
 
+### Help shortcut `.help`
+
+When the entire trimmed message is exactly `.help`, show the supported-command reference below in Vietnamese. Recognize `.help` before lexical `.headword` handling and before grading. It is a chat control command, not a request to explain the English word “help” or execute the commands in the reference.
+
+* Answer directly from this reference; do not load README, plans, learner history, CSVs, or skills merely to display help. Do not use shell, clipboard, or speech tools just to show this help.
+* Preserve the visible target, learner, unsaved material, requested test count, and any pending question, attempts, first-try status, correction/re-entry state, and round position. Do not grade, count an attempt, save, switch targets, or advance a round.
+* If a question is pending, finish help with a brief reminder to answer that same question (or re-enter its original answer when already in correction state); do not reveal a previously hidden answer or present a new question. Otherwise do not append the word-explanation `[NEXT]` reminder.
+* Clearly separate commands typed in the AI chat from commands typed in Termux and commands used inside `.m`. Use compact tables or lists with ASCII text markers, no emoji. Shell commands are documented here; typing them in chat does not implicitly authorize execution.
+* Keep this reference synchronized whenever a supported command is added, changed, or removed. List only supported commands; do not invent shortcuts for natural-language requests.
+
+Chat commands:
+
+| Input | Explanation to show |
+| --- | --- |
+| `.help` | Xem danh sách lệnh và cách dùng. |
+| `.từ` (ví dụ `.urge`) | Học hoặc chuyển sang từ đó: nghĩa, cách dùng, ví dụ, phát âm khi có. |
+| Từ, cụm từ hoặc câu tiếng Anh | Giải nghĩa; với câu, giải thích cấu trúc và sửa lỗi nếu cần. |
+| Số nguyên dương (ví dụ `5`) | Luyện số câu đã chọn cho từ đang học, khi không có câu đang chờ trả lời. |
+| `#username` (ví dụ `#qtu`) | Chọn người học cho phiên hiện tại. |
+| `.s` | Lưu ngay phần học đủ điều kiện đã hoàn thành; tiếp tục câu đang chờ. |
+| `.g` | Kiểm tra, commit thay đổi phù hợp và push Git; tiếp tục câu đang chờ. |
+
+Termux commands (after installing aliases using `.learn/bash.py` and loading `~/.bashrc`):
+
+| Command | Explanation to show |
+| --- | --- |
+| `.e` | Vào thư mục repo english. |
+| `.m` | Mở trình duyệt thư mục. |
+| `.q` | Chạy công cụ quiz tại thư mục bài học. |
+| `.p` | Chạy công cụ chuẩn bị bài tại thư mục bài học. |
+| `.t` | Chạy công cụ dịch tại thư mục bài học. |
+
+Inside the `.m` browser: `@en` goes to the english repo; `.cd` exits and moves the Termux shell to the selected directory; `.h` shows the browser's full command list; `.q` exits the browser (different from the Termux `.q` quiz alias).
+
+`.help` is an AI chat command; it is not currently a Termux shell alias. The `.q/.p/.t` lesson tools use the legacy lesson workflow, separate from the AI's WORDS CSV practice.
+
 ### Git shortcut `.g`
 
 When the learner's entire trimmed message is exactly `.g`, treat it as a Git publish command, never as an English answer or a normal learning request.
