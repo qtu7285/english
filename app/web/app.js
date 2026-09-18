@@ -8,6 +8,24 @@ if (initialModel === "gemini-2.5-flash" || initialModel === "gemini-1.5-flash" |
   localStorage.setItem("gemini_model", "gemini-3.6-flash");
 }
 
+// Ngăn trình duyệt tự động khôi phục vị trí cuộn khi tải lại trang
+if ("scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
+window.scrollTo(0, 0);
+
+// Đồng bộ chiều cao khả dụng chính xác từ visualViewport cho thiết bị di động
+function syncAppHeight() {
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty("--app-height", `${vh}px`);
+}
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", syncAppHeight);
+  window.visualViewport.addEventListener("scroll", syncAppHeight);
+}
+window.addEventListener("resize", syncAppHeight);
+syncAppHeight();
+
 // State
 const state = {
   engine: localStorage.getItem("ai_engine") || "antigravity",
@@ -229,13 +247,24 @@ function extractChoiceOptions(text) {
   return choices.length >= 2 ? choices : [];
 }
 
+// Helper quan ly an/hien thanh Quick Chips khi khong co chip nao
+function updateQuickChipsVisibility() {
+  const bar = document.getElementById("quickChipsBar");
+  if (!bar) return;
+  const hasChips = bar.querySelectorAll(".chip").length > 0;
+  bar.style.display = hasChips ? "flex" : "none";
+}
+
 // Update the dynamic choice chips in the Quick Chips bar
 function updateDynamicChoices(choices) {
   const container = document.getElementById("dynamicChoiceChips");
   if (!container) return;
   container.innerHTML = "";
 
-  if (!choices || choices.length === 0) return;
+  if (!choices || choices.length === 0) {
+    updateQuickChipsVisibility();
+    return;
+  }
 
   choices.forEach(c => {
     const btn = document.createElement("button");
@@ -246,6 +275,8 @@ function updateDynamicChoices(choices) {
     btn.title = `${c.key}: ${c.text}`;
     container.appendChild(btn);
   });
+
+  updateQuickChipsVisibility();
 }
 
 // Update dynamic context chips (e.g. '3 câu luyện', '5 câu luyện') based on tutoring flow
@@ -255,13 +286,8 @@ function updateContextChips(lastText) {
   container.innerHTML = "";
 
   if (!lastText) {
-    // Trang thai ban dau: hien thi tu mau de hoc thu
-    const urgeBtn = document.createElement("button");
-    urgeBtn.type = "button";
-    urgeBtn.className = "chip";
-    urgeBtn.setAttribute("data-send", ".urge");
-    urgeBtn.innerText = ".urge (học thử)";
-    container.appendChild(urgeBtn);
+    // Trang thai ban dau: an toan bo chip de giu giao dien gon gang
+    updateQuickChipsVisibility();
     return;
   }
 
@@ -269,6 +295,7 @@ function updateContextChips(lastText) {
   const isQuestion = /Câu\s+\d+\/\d+|\[D[1-3]\]|_{2,}/i.test(lastText) && !/Hoàn thành \d+\/\d+ câu/i.test(lastText);
   if (isQuestion) {
     // Dang lam test: AN TOAN BO nut chon so cau de tranh hoc vien bam nham lam hong bai test!
+    updateQuickChipsVisibility();
     return;
   }
 
@@ -288,6 +315,8 @@ function updateContextChips(lastText) {
     chip5.setAttribute("data-send", "5");
     chip5.innerText = "Luyện tiếp 5 câu";
     container.appendChild(chip5);
+
+    updateQuickChipsVisibility();
     return;
   }
 
@@ -314,8 +343,12 @@ function updateContextChips(lastText) {
     chip10.setAttribute("data-send", "10");
     chip10.innerText = "10 câu";
     container.appendChild(chip10);
+
+    updateQuickChipsVisibility();
     return;
   }
+
+  updateQuickChipsVisibility();
 }
 
 function processLineForAudio(line) {
@@ -1258,6 +1291,9 @@ updateContextChips("");
     const diff = currentY - startY;
 
     if (diff > 0) {
+      // Ngan chan trinh duyet mobile cuon ca window hoac giat man hinh
+      if (e.cancelable) e.preventDefault();
+
       // Co giat theo luc keo rubber-band
       const pullHeight = Math.min(diff * 0.4, PTR_MAX);
       ptr.style.height = `${pullHeight}px`;
@@ -1277,7 +1313,7 @@ updateContextChips("");
         hasTriggeredHaptic = false;
       }
     }
-  }, { passive: true });
+  }, { passive: false });
 
   chatViewport.addEventListener("touchend", () => {
     if (!isPulling) return;
@@ -1290,6 +1326,7 @@ updateContextChips("");
       label.innerText = "Đang làm mới...";
       triggerHaptic(35);
       setTimeout(() => {
+        window.scrollTo(0, 0);
         window.location.reload();
       }, 350);
     } else {

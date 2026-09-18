@@ -57,6 +57,11 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
   - [x] Định dạng hiệu ứng chuyển động mượt mà và biểu tượng xoay trong [`style.css`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/style.css).
   - [x] Xử lý cảm ứng `touchstart`, `touchmove`, `touchend` với hiệu ứng co giãn đàn hồi (rubber-band) và phản hồi rung haptic khi đạt ngưỡng kích hoạt trong [`app.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/app.js).
 
+- [x] **Bước 11: Ẩn các nút lệnh `.` ban đầu & Khóa cố định Viewport chống che ô nhập liệu**
+  - [x] Loại bỏ các nút lệnh cố định `.help`, `.s`, `.g` trong [`index.html`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/index.html) và nút `.urge` ban đầu trong [`app.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/app.js).
+  - [x] Thanh Quick Chips tự động ẩn hoàn toàn khi không có chip nào để giao diện tối giản, thoáng mắt.
+  - [x] Cố định `html`, `body` với `position: fixed; inset: 0; overscroll-behavior: none;`, `history.scrollRestoration = 'manual'`, và `flex-shrink: 0` trên `.app-footer`, `.app-header` cùng `min-height: 0` trên `.chat-viewport` nhằm triệt tiêu hoàn toàn hiện tượng lệch viewport hay che khuất ô gõ văn bản sau khi refresh.
+
 ---
 
 ## 3. Tiêu chuẩn Nghiệm thu
@@ -70,3 +75,4 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
 7. [x] Khi chỉnh sửa file CSS/JS/HTML, trình duyệt tự động cập nhật ngay lập tức nhờ Go Live-Reload.
 8. [x] Nút `3 câu luyện`, `5 câu luyện` chỉ xuất hiện đúng lúc (sau khi giải nghĩa từ), và ẩn hoàn toàn khi đang làm bài test.
 9. [x] Thao tác vuốt xuống khi đang ở đỉnh trang chat kích hoạt hiệu ứng loading, rung nhẹ và tự động làm mới ứng dụng (tiện dụng trên PWA).
+10. [x] Không còn các nút lệnh `.` cố định ban đầu; ô gõ tin nhắn luôn hiển thị trọn vẹn, không bị đẩy trôi hoặc che khuất sau khi refresh trang.
