@@ -5,7 +5,6 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 BIN_PATH="$HOME/.local/bin/english-server"
-PY_SERVER="$SCRIPT_DIR/api/server.py"
 
 PORT="${1:-5000}"
 
@@ -13,20 +12,29 @@ echo "=================================================="
 echo "  Khởi chạy English Tutor Web App"
 echo "=================================================="
 
-# Tự động biên dịch nếu chưa có binary hoặc code mới hơn
-if [ ! -f "$BIN_PATH" ] || [ "$SCRIPT_DIR/api/main.go" -nt "$BIN_PATH" ]; then
-    mkdir -p "$HOME/.local/bin"
-    if command -v go >/dev/null 2>&1; then
-        echo "[*] Tự động biên dịch Golang engine..."
-        go build -o "$BIN_PATH" "$SCRIPT_DIR/api/main.go" "$SCRIPT_DIR/api/vault.go" "$SCRIPT_DIR/api/gemini.go"
-        chmod +x "$BIN_PATH"
-    fi
+# Biên dịch lại khi chưa có binary hoặc bất kỳ file .go nào mới hơn binary
+needs_build=0
+if [ ! -x "$BIN_PATH" ]; then
+    needs_build=1
+else
+    for src in "$SCRIPT_DIR"/api/*.go; do
+        if [ "$src" -nt "$BIN_PATH" ]; then
+            needs_build=1
+            break
+        fi
+    done
 fi
 
-if [ -f "$BIN_PATH" ] && [ -x "$BIN_PATH" ]; then
-    echo "[*] Chạy động cơ Golang siêu nhẹ..."
-    "$BIN_PATH" --vault "$REPO_DIR" --port "$PORT" --open
-else
-    echo "[*] Fallback: Chạy động cơ Python..."
-    python3 "$PY_SERVER" --vault "$REPO_DIR" --port "$PORT" --open
+if [ "$needs_build" -eq 1 ]; then
+    if ! command -v go >/dev/null 2>&1; then
+        echo "[X] Chưa cài Go. Cài bằng: pkg install golang" >&2
+        exit 1
+    fi
+    echo "[*] Tự động biên dịch Golang engine..."
+    mkdir -p "$(dirname "$BIN_PATH")"
+    go build -o "$BIN_PATH" "$SCRIPT_DIR"/api/*.go
+    chmod +x "$BIN_PATH"
 fi
+
+echo "[*] Chạy động cơ Golang siêu nhẹ..."
+"$BIN_PATH" --vault "$REPO_DIR" --port "$PORT" --open

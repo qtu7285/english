@@ -14,7 +14,7 @@
         <div class="brand-logo">EN</div>
         <div class="brand-info">
           <h1>English Tutor AI</h1>
-          <span class="status-indicator online" id="statusIndicator">Cục bộ (Termux)</span>
+          <span class="status-indicator online" id="statusIndicator">Cục bộ</span>
         </div>
       </div>
       <div class="header-actions">
@@ -24,7 +24,7 @@
           </svg>
           <span class="btn-label">Vault</span>
         </button>
-        <button class="icon-btn" id="settingsBtn" title="Cài đặt API / OAuth">
+        <button class="icon-btn" id="settingsBtn" title="Cài đặt API">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -47,7 +47,7 @@
           <div class="avatar">AI</div>
           <div class="bubble">
             <div class="bubble-content">
-              <p>Xin chào! Tôi là trợ lý gia sư tiếng Anh được kết nối trực tiếp với Termux và kho tài liệu (Vault) của bạn.</p>
+              <p>Xin chào! Tôi là trợ lý gia sư tiếng Anh cá nhân của bạn.</p>
               <div class="badge-list">
                 <span class="badge badge-en">[EN] Tiếng Anh</span>
                 <span class="badge badge-vi">[VI] Giải thích tự nhiên</span>
@@ -89,7 +89,7 @@
       <form class="input-form" id="chatForm">
         <textarea
           id="messageInput"
-          placeholder="Nhập từ vựng, câu tiếng Anh, hoặc yêu cầu với Vault..."
+          placeholder="Nhập từ vựng, câu tiếng Anh, hoặc số câu để luyện..."
           rows="1"
           required
         ></textarea>
@@ -110,48 +110,31 @@
           <button class="close-btn" id="closeSettingsBtn">&times;</button>
         </div>
         <div class="modal-body">
-          <div class="tabs">
-            <button class="tab-btn active" data-tab="tab-apikey">API Key (Khuyên dùng)</button>
-            <button class="tab-btn" data-tab="tab-oauth">Google OAuth 2.0</button>
+          <div class="form-group">
+            <label for="engineSelect">Động cơ AI (Engine):</label>
+            <select id="engineSelect">
+              <option value="antigravity" selected>Antigravity CLI (Termux Pro - Không cần API Key)</option>
+              <option value="gemini">Google Gemini REST API (Nhanh ~1s, dùng API Key)</option>
+            </select>
+            <small class="form-hint" id="engineHint">Sử dụng trực tiếp tài khoản Pro đã đăng nhập trên Termux, không lo hết hạn ngạch.</small>
           </div>
 
-          <!-- API Key Tab -->
-          <div class="tab-content active" id="tab-apikey">
-            <div class="form-group">
-              <label for="apiKeyInput">Google Gemini API Key:</label>
-              <input type="password" id="apiKeyInput" placeholder="AIzaSy..." autocomplete="off">
-              <small class="form-hint">Lấy miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a>. Key được lưu an toàn trong trình duyệt của bạn.</small>
-            </div>
-          </div>
-
-          <!-- OAuth Tab -->
-          <div class="tab-content" id="tab-oauth">
-            <div class="form-group">
-              <label for="oauthClientId">OAuth Client ID:</label>
-              <input type="text" id="oauthClientId" placeholder="xxx.apps.googleusercontent.com">
-            </div>
-            <div class="form-group">
-              <label for="oauthClientSecret">OAuth Client Secret:</label>
-              <input type="password" id="oauthClientSecret" placeholder="GOCSPX-...">
-            </div>
-            <button type="button" class="btn btn-secondary" id="loginGoogleBtn">
-              Đăng nhập bằng Google
-            </button>
-            <div id="oauthStatus" class="form-hint" style="margin-top: 8px;"></div>
+          <div class="form-group" id="apiKeyGroup" style="margin-top: 14px;">
+            <label for="apiKeyInput">Google Gemini API Key:</label>
+            <input type="password" id="apiKeyInput" placeholder="AIzaSy... (Tùy chọn nếu dùng Antigravity Pro)" autocomplete="off">
+            <small class="form-hint">Lấy miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a>.</small>
           </div>
 
           <!-- Common AI Settings -->
-          <div class="form-group" style="margin-top: 16px;">
+          <div class="form-group" id="modelGroup" style="margin-top: 16px;">
             <label for="modelSelect">Mô hình AI (Model):</label>
             <select id="modelSelect">
-              <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Nhanh & Ổn định)</option>
-              <option value="gemini-2.5-pro">Gemini 2.5 Pro (Mạnh mẽ)</option>
-              <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+              <option value="gemini-3.6-flash" selected>Gemini 3.6 Flash (Khuyên dùng - Chuẩn Google)</option>
               <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
               <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
               <option value="custom">-- Nhập tên mô hình khác... --</option>
             </select>
-            <input type="text" id="customModelInput" placeholder="Ví dụ: gemini-2.5-flash" style="display: none; margin-top: 8px;">
+            <input type="text" id="customModelInput" placeholder="Ví dụ: gemini-3.6-flash" style="display: none; margin-top: 8px;">
           </div>
 
           <div class="form-group checkbox-group">

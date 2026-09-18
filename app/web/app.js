@@ -2,18 +2,16 @@
  * English Tutor & Vault AI - Frontend Application
  */
 
-let initialModel = localStorage.getItem("gemini_model") || "gemini-2.5-flash";
-if (initialModel === "gemini-1.5-flash" || initialModel === "gemini-2.0-flash") {
-  initialModel = "gemini-2.5-flash";
-  localStorage.setItem("gemini_model", "gemini-2.5-flash");
+let initialModel = localStorage.getItem("gemini_model") || "gemini-3.6-flash";
+if (initialModel === "gemini-2.5-flash" || initialModel === "gemini-1.5-flash" || initialModel === "gemini-2.0-flash") {
+  initialModel = "gemini-3.6-flash";
+  localStorage.setItem("gemini_model", "gemini-3.6-flash");
 }
 
 // State
 const state = {
+  engine: localStorage.getItem("ai_engine") || "antigravity",
   apiKey: localStorage.getItem("gemini_api_key") || "",
-  oauthToken: localStorage.getItem("gemini_oauth_token") || "",
-  oauthClientId: localStorage.getItem("oauth_client_id") || "",
-  oauthClientSecret: localStorage.getItem("oauth_client_secret") || "",
   model: initialModel,
   enableVaultTools: localStorage.getItem("enable_vault_tools") !== "false",
   ttsRate: parseFloat(localStorage.getItem("tts_rate") || "0.9"),
@@ -34,11 +32,11 @@ const settingsBtn = document.getElementById("settingsBtn");
 const settingsModal = document.getElementById("settingsModal");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+const engineSelect = document.getElementById("engineSelect");
+const engineHint = document.getElementById("engineHint");
+const apiKeyGroup = document.getElementById("apiKeyGroup");
 const apiKeyInput = document.getElementById("apiKeyInput");
-const oauthClientId = document.getElementById("oauthClientId");
-const oauthClientSecret = document.getElementById("oauthClientSecret");
-const loginGoogleBtn = document.getElementById("loginGoogleBtn");
-const oauthStatus = document.getElementById("oauthStatus");
+const modelGroup = document.getElementById("modelGroup");
 const modelSelect = document.getElementById("modelSelect");
 const customModelInput = document.getElementById("customModelInput");
 const enableVaultToolsCheck = document.getElementById("enableVaultToolsCheck");
@@ -54,43 +52,153 @@ const vaultFileList = document.getElementById("vaultFileList");
 const vaultPreview = document.getElementById("vaultPreview");
 const insertToChatBtn = document.getElementById("insertToChatBtn");
 
+function stripHtmlAndEntities(str) {
+  if (!str) return "";
+  return str
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function escapeAttr(str) {
   return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function makeAudioButton(text) {
-  const clean = text.trim();
+  const clean = stripHtmlAndEntities(text)
+    .replace(/\[.*?\]/g, "")
+    .replace(/[*#`"“”]/g, "")
+    .trim();
+  if (!clean) return "";
   const attr = escapeAttr(clean);
   return `<button type="button" class="inline-audio-btn" data-text="${attr}" title="Phát âm câu này">🔊</button>`;
 }
 
-function processLineForAudio(line) {
-  if (!line || line.includes("inline-audio-btn")) return line;
+// Vietnamese diacritics detection
+const VIETNAMESE_REGEX = /[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ]/i;
 
-  // Case 1: Quoted English sentence in this line
-  // e.g. - "She urged him to apply for the job." (Cô ấy thúc giục...)
-  const quoteMatch = line.match(/(&quot;|["“])([A-Za-z0-9\s,.'’!?\-_]{4,})(&quot;|["”])/);
-  if (quoteMatch) {
-    const enText = quoteMatch[2].trim();
-    if (!VIETNAMESE_REGEX.test(enText) && enText.split(/\s+/).length >= 2) {
-      return line + ' ' + makeAudioButton(enText);
+function extractEnglishElements(text) {
+  if (!text) return { word: "", sentences: [] };
+  const lines = text.split('\n');
+  const sentences = [];
+  let targetWord = "";
+
+  // 0. Explicit audio placeholders: [audio:text] or [🔊:text] or [speak:text]
+  const audioPlaceholders = text.match(/\[(?:audio|speak|play|sound|🔊):\s*([^\]]+)\]/gi);
+  if (audioPlaceholders) {
+    audioPlaceholders.forEach(ph => {
+      const m = ph.match(/\[(?:audio|speak|play|sound|🔊):\s*([^\]]+)\]/i);
+      if (m && m[1]) {
+        const val = stripHtmlAndEntities(m[1]).replace(/[*#`"“”]/g, "").trim();
+        if (val && !VIETNAMESE_REGEX.test(val)) {
+          if (val.split(/\s+/).length <= 2 && !targetWord) {
+            targetWord = val;
+          } else if (val.split(/\s+/).length > 2 && !sentences.includes(val)) {
+            sentences.push(val);
+          }
+        }
+      }
+    });
+  }
+
+  // 1. Look for bold words or target headwords at the start of response
+  const boldMatches = text.match(/\*\*([a-zA-Z\s\-]{2,30})\*\*/g);
+  if (boldMatches) {
+    for (const b of boldMatches) {
+      const w = b.replace(/\*\*/g, "").trim();
+      if (!VIETNAMESE_REGEX.test(w) && w.split(/\s+/).length <= 3) {
+        if (!targetWord) targetWord = w;
+        break;
+      }
+    }
+  }
+  if (!targetWord) {
+    const dotMatch = text.match(/\.([a-zA-Z]{2,30})/);
+    if (dotMatch) targetWord = dotMatch[1].trim();
+  }
+
+  // 2. Look for quoted English sentences
+  const quotes = text.match(/["“]([A-Za-z0-9\s,.'’!?\-_]{5,})["”]/g);
+  if (quotes) {
+    quotes.forEach(q => {
+      const cleanQ = q.replace(/["“”]/g, "").trim();
+      if (!VIETNAMESE_REGEX.test(cleanQ) && cleanQ.length > 5) {
+        if (!sentences.includes(cleanQ)) sentences.push(cleanQ);
+      }
+    });
+  }
+
+  // 3. Scan lines for English sentences followed by Vietnamese translations in parens
+  lines.forEach(line => {
+    let clean = line
+      .replace(/\[.*?\]/g, "")
+      .replace(/^[\s*\-#\d.]+/, "")
+      .replace(/`.*?`/g, "")
+      .trim();
+
+    const parenIdx = clean.search(/\([^)]*[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ][^)]*\)/i);
+    if (parenIdx > 0) {
+      clean = clean.substring(0, parenIdx).replace(/[*#`"“”]/g, "").trim();
+      if (clean && !VIETNAMESE_REGEX.test(clean) && clean.split(/\s+/).length >= 3) {
+        if (!sentences.includes(clean)) sentences.push(clean);
+      }
+    }
+  });
+
+  return { word: targetWord, sentences };
+}
+
+function processLineForAudio(line) {
+  if (!line || line.includes("inline-audio-btn") || line.includes("<pre>") || line.includes("<code>")) return line;
+
+  // Pattern 1: Target Headword, e.g. <strong>capable</strong> or <h3>capable</h3>
+  const boldHeadword = line.match(/^[\s\-]*(?:<h[1-3]>)?\s*<strong>([A-Za-z][A-Za-z\s\-]{1,29})<\/strong>/);
+  if (boldHeadword) {
+    const word = stripHtmlAndEntities(boldHeadword[1]);
+    if (word && !VIETNAMESE_REGEX.test(word)) {
+      const btn = makeAudioButton(word);
+      if (btn) return line.replace(boldHeadword[0], boldHeadword[0] + ' ' + btn);
     }
   }
 
-  // Case 2: Target headword line: e.g. **urge** (verb) /ɜːrdʒ/
-  const boldWord = line.match(/^[\s*\-#]*\*\*([A-Za-z\s\-]{2,30})\*\*(.*)$/);
-  if (boldWord && !VIETNAMESE_REGEX.test(boldWord[1])) {
-    const word = boldWord[1].trim();
-    return line + ' ' + makeAudioButton(word);
+  // Pattern 2: English sentence followed by Vietnamese in parentheses
+  const parenIdx = line.search(/\([^)]*[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ][^)]*\)/i);
+  if (parenIdx > 0) {
+    const leftPart = line.substring(0, parenIdx);
+    const rightPart = line.substring(parenIdx);
+    const cleanLeft = stripHtmlAndEntities(leftPart)
+      .replace(/^[*\s\-_•\d.]+/, "")
+      .replace(/[*#`"“”]/g, "")
+      .trim();
+    if (cleanLeft && !VIETNAMESE_REGEX.test(cleanLeft) && cleanLeft.split(/\s+/).length >= 2) {
+      const btn = makeAudioButton(cleanLeft);
+      if (btn) return leftPart.trimEnd() + ' ' + btn + ' ' + rightPart;
+    }
   }
 
-  // Case 3: Unquoted English sentence preceding Vietnamese explanation in parens
-  // e.g. - She urged him to reconsider. (Cô ấy khuyên...)
-  const parenMatch = line.match(/([A-Z][A-Za-z0-9\s,.'’!?\-_]{6,}[.!?])\s*(\([^)]*[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ][^)]*\))/);
-  if (parenMatch) {
-    const enText = parenMatch[1].trim();
-    if (!VIETNAMESE_REGEX.test(enText) && enText.split(/\s+/).length >= 3) {
-      return line + ' ' + makeAudioButton(enText);
+  // Pattern 3: Explicit quoted English sentence anywhere in the line
+  const quoteMatch = line.match(/(?:&quot;|["“])([^"“”&<]{4,})(?:&quot;|["”])/);
+  if (quoteMatch) {
+    const cleanQuote = stripHtmlAndEntities(quoteMatch[1]).replace(/[*#`]/g, "").trim();
+    if (cleanQuote && !VIETNAMESE_REGEX.test(cleanQuote) && cleanQuote.split(/\s+/).length >= 2) {
+      const btn = makeAudioButton(cleanQuote);
+      if (btn) return line.replace(quoteMatch[0], quoteMatch[0] + ' ' + btn);
     }
   }
 
@@ -110,6 +218,16 @@ function renderMarkdown(text) {
   html = html.replace(/```([a-z]*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
   // Inline code
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Convert explicit audio placeholders: [audio:Text] or [🔊:Text] or [speak:Text]
+  html = html.replace(/\[(?:audio|speak|play|sound|🔊):\s*([^\]]+)\]/gi, (match, toSpeak) => {
+    const clean = stripHtmlAndEntities(toSpeak)
+      .replace(/[*#`"“”]/g, "")
+      .trim();
+    if (!clean) return "";
+    const attr = escapeAttr(clean);
+    return `<button type="button" class="inline-audio-btn" data-text="${attr}" title="Phát âm: ${attr}">🔊</button>`;
+  });
 
   // Bold & Italic
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -140,17 +258,13 @@ function renderMarkdown(text) {
   return `<p>${html}</p>`;
 }
 
-// Vietnamese diacritics detection
-const VIETNAMESE_REGEX = /[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ]/i;
-
-// Speech Synthesis (Audio Pronunciation)
+// Speech Synthesis (Audio Pronunciation) with Android Chrome fix
 function speakText(explicitText) {
   if (!("speechSynthesis" in window)) {
     alert("Trình duyệt không hỗ trợ Web Speech API.");
     return;
   }
 
-  // Use explicitText when passed; ONLY fallback to selection if explicitText is missing
   let toSpeak = explicitText;
   if (!toSpeak || typeof toSpeak !== "string" || !toSpeak.trim()) {
     const selected = window.getSelection().toString().trim();
@@ -161,45 +275,94 @@ function speakText(explicitText) {
 
   if (!toSpeak) return;
 
-  window.speechSynthesis.cancel();
-
-  // Strip Vietnamese in parens if any sneaked in
-  toSpeak = toSpeak.replace(/\([^)]*[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ][^)]*\)/gi, "");
-
-  // Clean brackets, blanks, quotes
-  let clean = toSpeak
+  // Clean HTML tags, Vietnamese parens, markdown, blanks
+  let clean = stripHtmlAndEntities(toSpeak);
+  clean = clean.replace(/\([^)]*[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵ][^)]*\)/gi, "");
+  clean = clean
     .replace(/\[.*?\]/g, "")
-    .replace(/_+/g, "blank")
+    .replace(/(_+\s*)+/g, ", ")
     .replace(/[*#`"“”]/g, "")
+    .replace(/\s+/g, " ")
     .trim();
 
   if (!clean) return;
 
-  const utterance = new SpeechSynthesisUtterance(clean);
-  utterance.lang = "en-US";
-  utterance.rate = state.ttsRate;
+  // Chrome Android audio engine fix: resume if paused, cancel, and start after short 50ms delay
+  try {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+    window.speechSynthesis.cancel();
+  } catch (err) {}
 
-  // Try to find native English voice
-  const voices = window.speechSynthesis.getVoices();
-  const enVoice = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural") || v.default));
-  if (enVoice) utterance.voice = enVoice;
+  setTimeout(() => {
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = "en-US";
+    utterance.rate = state.ttsRate || 0.9;
 
-  window.speechSynthesis.speak(utterance);
+    // Pick English voice
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural") || v.default));
+    if (enVoice) utterance.voice = enVoice;
+
+    window.speechSynthesis.speak(utterance);
+  }, 50);
 }
 
-// Copy to Clipboard
+// Copy to Clipboard (Safe for non-HTTPS / LAN IP and older browsers)
 async function copyToClipboard(text, btnElement) {
-  const clean = text.replace(/\[.*?\]/g, "").replace(/[*#`]/g, "").trim();
-  try {
-    await navigator.clipboard.writeText(clean);
-    if (btnElement) {
+  if (!text) return false;
+  const clean = stripHtmlAndEntities(text)
+    .replace(/\[.*?\]/g, "")
+    .replace(/[*#`]/g, "")
+    .trim();
+  if (!clean) return false;
+
+  let copied = false;
+
+  // Method 1: Modern navigator.clipboard API (requires secure context HTTPS or localhost)
+  if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    try {
+      await navigator.clipboard.writeText(clean);
+      copied = true;
+    } catch (err) {
+      copied = false;
+    }
+  }
+
+  // Method 2: Fallback textarea + execCommand('copy') (works on HTTP, LAN IP, older webviews)
+  if (!copied) {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = clean;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      textArea.style.top = "0";
+      textArea.setAttribute("readonly", "");
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      copied = document.execCommand("copy");
+      document.body.removeChild(textArea);
+    } catch (err) {
+      copied = false;
+    }
+  }
+
+  // UI feedback if triggered by a button click
+  if (btnElement) {
+    if (copied) {
       const orig = btnElement.innerText;
       btnElement.innerText = "✓ Đã chép câu";
       setTimeout(() => { btnElement.innerText = orig; }, 1800);
+    } else {
+      const orig = btnElement.innerText;
+      btnElement.innerText = "Chép thủ công";
+      setTimeout(() => { btnElement.innerText = orig; }, 1800);
     }
-  } catch (err) {
-    alert("Không thể sao chép: " + err);
   }
+
+  return copied;
 }
 
 // Append message to UI
@@ -218,19 +381,46 @@ function appendMessage(role, text, toolLogs = []) {
   content.className = "bubble-content";
   content.innerHTML = renderMarkdown(text);
 
-  // If tool calls were executed, show small disclosure
-  if (toolLogs && toolLogs.length > 0) {
-    const toolBox = document.createElement("div");
-    toolBox.style.marginTop = "8px";
-    toolBox.style.fontSize = "11px";
-    toolBox.style.color = "#94a3b8";
-    toolBox.innerHTML = toolLogs.map(t =>
-      `<div>🛠️ <code>${t.tool}</code> (${JSON.stringify(t.args)})</div>`
-    ).join("");
-    content.appendChild(toolBox);
-  }
-
   bubble.appendChild(content);
+
+  // Bottom action bar for assistant messages: reliable, large, easy-to-tap buttons
+  if (role === "assistant") {
+    const extracted = extractEnglishElements(text);
+    if (extracted.word || extracted.sentences.length > 0) {
+      const actions = document.createElement("div");
+      actions.className = "bubble-actions";
+
+      // 1. Target word button
+      if (extracted.word) {
+        const wordBtn = document.createElement("button");
+        wordBtn.type = "button";
+        wordBtn.className = "btn-action speak-btn";
+        wordBtn.setAttribute("data-text", extracted.word);
+        wordBtn.innerHTML = `🔊 Từ: <strong>${escapeHtml(extracted.word)}</strong>`;
+        actions.appendChild(wordBtn);
+      }
+
+      // 2. Main sentence button
+      if (extracted.sentences.length > 0) {
+        const mainSentence = extracted.sentences[0];
+        const sentBtn = document.createElement("button");
+        sentBtn.type = "button";
+        sentBtn.className = "btn-action speak-btn";
+        sentBtn.setAttribute("data-text", mainSentence);
+        sentBtn.innerHTML = `🔊 Nghe câu`;
+        actions.appendChild(sentBtn);
+
+        const copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.className = "btn-action copy-btn";
+        copyBtn.setAttribute("data-text", mainSentence);
+        copyBtn.innerHTML = `📋 Chép câu`;
+        actions.appendChild(copyBtn);
+      }
+
+      bubble.appendChild(actions);
+    }
+  }
 
   row.appendChild(avatar);
   row.appendChild(bubble);
@@ -242,7 +432,7 @@ function appendMessage(role, text, toolLogs = []) {
 
 // Global click delegation for inline audio and copy buttons
 chatMessages.addEventListener("click", (e) => {
-  const audioBtn = e.target.closest(".inline-audio-btn");
+  const audioBtn = e.target.closest(".inline-audio-btn, .speak-btn");
   if (audioBtn) {
     e.preventDefault();
     e.stopPropagation();
@@ -255,7 +445,7 @@ chatMessages.addEventListener("click", (e) => {
     return;
   }
 
-  const copyBtn = e.target.closest(".inline-copy-btn");
+  const copyBtn = e.target.closest(".inline-copy-btn, .copy-btn");
   if (copyBtn) {
     e.preventDefault();
     e.stopPropagation();
@@ -266,6 +456,64 @@ chatMessages.addEventListener("click", (e) => {
     return;
   }
 });
+
+// Lively Loading Indicator with gentle status transitions
+function createLoadingIndicator() {
+  const row = document.createElement("div");
+  row.className = "message-row assistant loading-row";
+
+  const avatar = document.createElement("div");
+  avatar.className = "avatar avatar-thinking";
+  avatar.innerText = "AI";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble bubble-loading";
+
+  bubble.innerHTML = `
+    <div class="thinking-container">
+      <div class="typing-wave">
+        <span class="wave-dot"></span>
+        <span class="wave-dot"></span>
+        <span class="wave-dot"></span>
+      </div>
+      <div class="thinking-status">
+        <span class="thinking-label">Đang suy nghĩ...</span>
+      </div>
+    </div>
+  `;
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  chatMessages.appendChild(row);
+  chatViewport.scrollTop = chatViewport.scrollHeight;
+
+  // Gentle, friendly status transitions (no internal technical or Termux narration)
+  const phases = [
+    "Đang suy nghĩ...",
+    "Đang chuẩn bị câu trả lời...",
+    "Đang phân tích cấu trúc...",
+    "Đang hoàn thiện ví dụ tự nhiên..."
+  ];
+  let phaseIdx = 0;
+  const labelEl = bubble.querySelector(".thinking-label");
+  const timer = setInterval(() => {
+    phaseIdx = (phaseIdx + 1) % phases.length;
+    if (labelEl) {
+      labelEl.classList.add("fade-out");
+      setTimeout(() => {
+        labelEl.innerText = phases[phaseIdx];
+        labelEl.classList.remove("fade-out");
+      }, 250);
+    }
+  }, 3500);
+
+  return {
+    remove: () => {
+      clearInterval(timer);
+      row.remove();
+    }
+  };
+}
 
 // Send Message Handler
 async function handleSendMessage(msgText) {
@@ -281,8 +529,8 @@ async function handleSendMessage(msgText) {
   // Add user bubble in UI
   appendMessage("user", text);
 
-  // Show loading indicator
-  const loadingRow = appendMessage("assistant", "Đang xử lý...");
+  // Show lively loading indicator (no technical/Termux narration)
+  const loadingIndicator = createLoadingIndicator();
   sendBtn.disabled = true;
 
   try {
@@ -290,17 +538,17 @@ async function handleSendMessage(msgText) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        engine: state.engine,
         message: text,
         history: priorHistory,
         apiKey: state.apiKey,
-        oauthToken: state.oauthToken,
         model: state.model,
         enableVaultTools: state.enableVaultTools
       })
     });
 
     const data = await res.json();
-    loadingRow.remove();
+    loadingIndicator.remove();
 
     if (data.error) {
       appendMessage("assistant", `[X] Lỗi: ${data.error}`);
@@ -308,10 +556,16 @@ async function handleSendMessage(msgText) {
       state.conversation.push({ role: "user", text });
       state.conversation.push({ role: "assistant", text: data.text });
       appendMessage("assistant", data.text, data.tool_logs);
+
+      // Automatic sentence clipboard (per AGENTS.md rule for Tap to Translate)
+      const extracted = extractEnglishElements(data.text);
+      if (extracted.sentences && extracted.sentences.length > 0) {
+        copyToClipboard(extracted.sentences[0]);
+      }
     }
   } catch (err) {
-    loadingRow.remove();
-    appendMessage("assistant", `[X] Lỗi kết nối mạng: ${err.message}`);
+    loadingIndicator.remove();
+    appendMessage("assistant", `[X] Lỗi kết nối: ${err.message}`);
   } finally {
     sendBtn.disabled = false;
   }
@@ -319,7 +573,7 @@ async function handleSendMessage(msgText) {
 
 // Vault Explorer
 async function loadVaultFiles(subpath = "") {
-  vaultFileList.innerHTML = '<div class="loading-state">Đang nạp file...</div>';
+  vaultFileList.innerHTML = '<div class="vault-loading-box"><span class="vault-spinner"></span></div>';
   try {
     const res = await fetch(`/api/vault/list?subpath=${encodeURIComponent(subpath)}`);
     const data = await res.json();
@@ -404,6 +658,18 @@ clearBtn.onclick = () => {
 };
 
 // Settings Modal Handlers
+function updateEngineUI() {
+  if (engineSelect.value === "antigravity") {
+    engineHint.innerText = "Sử dụng trực tiếp tài khoản Pro đã đăng nhập trên Termux, không lo hết hạn ngạch.";
+    apiKeyInput.placeholder = "Tùy chọn nếu dùng Antigravity Pro...";
+  } else {
+    engineHint.innerText = "Gọi trực tiếp đến Google Gemini REST API qua API Key của bạn (phản hồi siêu nhanh ~1s).";
+    apiKeyInput.placeholder = "AIzaSy... (Bắt buộc với Gemini REST API)";
+  }
+}
+
+engineSelect.onchange = updateEngineUI;
+
 modelSelect.onchange = () => {
   if (modelSelect.value === "custom") {
     customModelInput.style.display = "block";
@@ -414,9 +680,9 @@ modelSelect.onchange = () => {
 };
 
 settingsBtn.onclick = () => {
+  engineSelect.value = state.engine;
+  updateEngineUI();
   apiKeyInput.value = state.apiKey;
-  oauthClientId.value = state.oauthClientId;
-  oauthClientSecret.value = state.oauthClientSecret;
 
   const optionExists = Array.from(modelSelect.options).some(opt => opt.value === state.model);
   if (optionExists) {
@@ -437,9 +703,8 @@ settingsBtn.onclick = () => {
 closeSettingsBtn.onclick = () => settingsModal.classList.add("hidden");
 
 saveSettingsBtn.onclick = () => {
+  state.engine = engineSelect.value;
   state.apiKey = apiKeyInput.value.trim();
-  state.oauthClientId = oauthClientId.value.trim();
-  state.oauthClientSecret = oauthClientSecret.value.trim();
 
   if (modelSelect.value === "custom") {
     state.model = customModelInput.value.trim() || "gemini-3.6-flash";
@@ -450,31 +715,23 @@ saveSettingsBtn.onclick = () => {
   state.enableVaultTools = enableVaultToolsCheck.checked;
   state.ttsRate = parseFloat(ttsRate.value);
 
+  localStorage.setItem("ai_engine", state.engine);
   localStorage.setItem("gemini_api_key", state.apiKey);
-  localStorage.setItem("oauth_client_id", state.oauthClientId);
-  localStorage.setItem("oauth_client_secret", state.oauthClientSecret);
   localStorage.setItem("gemini_model", state.model);
   localStorage.setItem("enable_vault_tools", state.enableVaultTools);
   localStorage.setItem("tts_rate", state.ttsRate);
 
   settingsModal.classList.add("hidden");
-  appendMessage("assistant", `[OK] Đã lưu cấu hình cài đặt thành công (Mô hình: ${state.model}).`);
+  const engineDesc = state.engine === "antigravity" ? "Antigravity CLI (Termux Pro)" : `Gemini REST API (${state.model})`;
+  appendMessage("assistant", `[OK] Đã lưu cài đặt thành công (Động cơ: ${engineDesc}).`);
 };
 
 ttsRate.oninput = () => {
   ttsRateVal.innerText = ttsRate.value + "x";
 };
 
-// Tabs in settings
-document.querySelectorAll(".tab-btn").forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    btn.classList.add("active");
-    const target = btn.getAttribute("data-tab");
-    document.getElementById(target).classList.add("active");
-  };
-});
+// Purge OAuth credentials left in localStorage by earlier versions
+["gemini_oauth_token", "oauth_client_id", "oauth_client_secret"].forEach(k => localStorage.removeItem(k));
 
 // Vault Modal Handlers
 vaultBtn.onclick = () => {

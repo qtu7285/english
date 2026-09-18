@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -60,6 +58,18 @@ Rules:
    - '.g': Git sync status.
    - '.help': Show available commands.
 
+6. Pronunciation Placeholder (CRITICAL for Audio):
+   Whenever presenting an English headword, phrase, example sentence, or test question, append an audio placeholder:
+   [audio:Exact English text to speak]
+   directly after the English text (before any Vietnamese translation in parentheses).
+   Examples:
+   - Headword: **urge** [audio:urge] /ɜːrdʒ/ (v): thúc giục
+   - Collocation: **urge somebody to do something** [audio:urge somebody to do something]
+   - Example sentence: She urged me to apply for the position. [audio:She urged me to apply for the position.] (Cô ấy đã giục tôi nộp đơn ứng tuyển.)
+   - Test question with blanks:
+     She _____ (urge) me to apply for the position. [audio:She urged me to apply for the position.] (Cô ấy đã giục tôi...)
+   *IMPORTANT*: In test questions or sentences with blanks like '_____', the placeholder [audio:...] MUST contain the COMPLETE correct sentence (with the correct word filled in instead of blanks or underscores), so that the learner can hear the full correct pronunciation!
+
 You have access to tools to read, search, list, and write files in the user's learning vault and vocabulary data. Use them when requested.`
 
 type ServerApp struct {
@@ -83,11 +93,12 @@ func sendError(w http.ResponseWriter, status int, msg string) {
 }
 
 func (s *ServerApp) handleStatus(w http.ResponseWriter, r *http.Request) {
-	sendJSON(w, http.StatusOK, map[string]string{
-		"status":     "ok",
-		"engine":     "golang",
-		"vault_root": s.Vault.RootDir,
-		"web_dir":    s.WebDir,
+	sendJSON(w, http.StatusOK, map[string]interface{}{
+		"status":                "ok",
+		"engine":                "golang",
+		"antigravity_available": IsAgyAvailable(),
+		"vault_root":            s.Vault.RootDir,
+		"web_dir":               s.WebDir,
 	})
 }
 
@@ -155,10 +166,10 @@ func (s *ServerApp) handleVaultSearch(w http.ResponseWriter, r *http.Request) {
 
 func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 	var body struct {
+		Engine            string                   `json:"engine"`
 		Message           string                   `json:"message"`
 		History           []map[string]interface{} `json:"history"`
 		APIKey            string                   `json:"apiKey"`
-		OAuthToken        string                   `json:"oauthToken"`
 		Model             string                   `json:"model"`
 		SystemInstruction string                   `json:"systemInstruction"`
 		EnableVaultTools  *bool                    `json:"enableVaultTools"`
@@ -176,24 +187,52 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	apiKey := strings.TrimSpace(body.APIKey)
-	oauthToken := strings.TrimSpace(body.OAuthToken)
+	sysPrompt := body.SystemInstruction
+	if strings.TrimSpace(sysPrompt) == "" {
+		sysPrompt = DefaultSystemPrompt
+	}
 
-	if apiKey == "" && oauthToken == "" {
+	engine := strings.TrimSpace(body.Engine)
+	if engine == "" {
+		if apiKey != "" {
+			engine = "gemini"
+		} else if IsAgyAvailable() {
+			engine = "antigravity"
+		}
+	}
+
+	if engine == "antigravity" {
+		if !IsAgyAvailable() {
+			sendError(w, http.StatusServiceUnavailable, "Lệnh Antigravity CLI ('agy') không tìm thấy trên hệ thống Termux.")
+			return
+		}
+		log.Printf("[CHAT AGY] Xử lý qua Antigravity CLI Pro trên Termux (msg=%q)", msg)
+		fullPrompt := BuildAgyPrompt(body.History, msg, sysPrompt)
+		reply, err := RunAntigravityCLI(fullPrompt, s.Vault.RootDir)
+		if err != nil {
+			log.Printf("[CHAT AGY ERROR] %v", err)
+			sendError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		sendJSON(w, http.StatusOK, map[string]interface{}{
-			"text": "[~] Bạn chưa cấu hình Google API Key hoặc OAuth Token.\n\nVui lòng nhấn biểu tượng Cài đặt (⚙) ở góc trên để nhập API Key (lấy miễn phí tại https://aistudio.google.com/) hoặc đăng nhập OAuth.\n\nTrong lúc chờ cấu hình, bạn vẫn có thể dùng tab 'Vault Explorer' để đọc/ghi file từ vựng trực tiếp!",
+			"text":      reply,
+			"tool_logs": []interface{}{},
+			"engine":    "antigravity",
+		})
+		return
+	}
+
+	if apiKey == "" {
+		sendJSON(w, http.StatusOK, map[string]interface{}{
+			"text": "[~] Chưa cấu hình Google API Key hoặc Antigravity CLI.\n\nBạn có 2 lựa chọn trong Cài đặt (⚙):\n1. Chọn động cơ 'Antigravity CLI (Termux Pro)' để dùng trực tiếp tài khoản Pro trên máy Termux (không cần API Key).\n2. Hoặc nhập Google Gemini API Key (miễn phí tại https://aistudio.google.com/apikey).",
 			"tool_logs": []interface{}{},
 		})
 		return
 	}
 
 	model := strings.TrimSpace(body.Model)
-	if model == "" {
-		model = "gemini-2.5-flash"
-	}
-
-	sysPrompt := body.SystemInstruction
-	if strings.TrimSpace(sysPrompt) == "" {
-		sysPrompt = DefaultSystemPrompt
+	if model == "" || model == "gemini-2.5-flash" {
+		model = "gemini-3.6-flash"
 	}
 
 	enableTools := true
@@ -244,7 +283,7 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[CHAT] model=%s msg=%q historyLen=%d enableTools=%v", model, msg, len(body.History), enableTools)
 
-	client := NewGeminiClient(apiKey, oauthToken)
+	client := NewGeminiClient(apiKey)
 	result, err := client.ChatWithVault(s.Vault, contents, model, sysPrompt, enableTools)
 	if err != nil {
 		log.Printf("[CHAT ERROR] %v", err)
@@ -253,45 +292,6 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendJSON(w, http.StatusOK, result)
-}
-
-func (s *ServerApp) handleOAuthExchange(w http.ResponseWriter, r *http.Request) {
-	var body struct {
-		Code         string `json:"code"`
-		ClientID     string `json:"clientId"`
-		ClientSecret string `json:"clientSecret"`
-		RedirectURI  string `json:"redirectUri"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sendError(w, http.StatusBadRequest, "Invalid JSON body")
-		return
-	}
-
-	tokenURL := "https://oauth2.googleapis.com/token"
-	data := url.Values{
-		"code":          {body.Code},
-		"client_id":     {body.ClientID},
-		"client_secret": {body.ClientSecret},
-		"redirect_uri":  {body.RedirectURI},
-		"grant_type":    {"authorization_code"},
-	}
-
-	resp, err := http.PostForm(tokenURL, data)
-	if err != nil {
-		sendError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	defer resp.Body.Close()
-
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		sendError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(resp.StatusCode)
-	w.Write(respBytes)
 }
 
 func getTailscaleIP() string {
@@ -348,7 +348,6 @@ func main() {
 	mux.HandleFunc("/api/vault/write", app.handleVaultWrite)
 	mux.HandleFunc("/api/vault/search", app.handleVaultSearch)
 	mux.HandleFunc("/api/chat", app.handleChat)
-	mux.HandleFunc("/api/oauth/exchange", app.handleOAuthExchange)
 
 	// Static Web Server
 	fileServer := http.FileServer(http.Dir(webDir))

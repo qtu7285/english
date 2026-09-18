@@ -22,13 +22,17 @@ type GeminiContent struct {
 
 type GeminiPart struct {
 	Text             string                `json:"text,omitempty"`
+	ThoughtSignature string                `json:"thought_signature,omitempty"`
+	ThoughtSigCamel  string                `json:"thoughtSignature,omitempty"`
 	FunctionCall     *GeminiFunctionCall   `json:"functionCall,omitempty"`
 	FunctionResponse *GeminiFunctionResult `json:"functionResponse,omitempty"`
 }
 
 type GeminiFunctionCall struct {
-	Name string                 `json:"name"`
-	Args map[string]interface{} `json:"args"`
+	Name             string                 `json:"name"`
+	Args             map[string]interface{} `json:"args"`
+	ThoughtSignature string                 `json:"thought_signature,omitempty"`
+	ThoughtSigCamel  string                 `json:"thoughtSignature,omitempty"`
 }
 
 type GeminiFunctionResult struct {
@@ -151,14 +155,12 @@ var VaultToolDeclarations = []FunctionDeclaration{
 
 type GeminiClient struct {
 	APIKey     string
-	OAuthToken string
 	HTTPClient *http.Client
 }
 
-func NewGeminiClient(apiKey, oauthToken string) *GeminiClient {
+func NewGeminiClient(apiKey string) *GeminiClient {
 	return &GeminiClient{
 		APIKey:     strings.TrimSpace(apiKey),
-		OAuthToken: strings.TrimSpace(oauthToken),
 		HTTPClient: &http.Client{Timeout: 45 * time.Second},
 	}
 }
@@ -174,8 +176,8 @@ func (c *GeminiClient) makeRequest(model string, payload *GeminiRequest) (*Gemin
 		return nil, err
 	}
 
-	maxRetries := 3
-	backoffSec := 2 * time.Second
+	maxRetries := 4
+	backoffSec := 1500 * time.Millisecond
 
 	for attempt := 0; attempt < maxRetries; attempt++ {
 		req, err := http.NewRequest("POST", reqURL, bytes.NewBuffer(bodyBytes))
@@ -184,9 +186,6 @@ func (c *GeminiClient) makeRequest(model string, payload *GeminiRequest) (*Gemin
 		}
 
 		req.Header.Set("Content-Type", "application/json")
-		if c.OAuthToken != "" {
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.OAuthToken))
-		}
 
 		resp, err := c.HTTPClient.Do(req)
 		if err != nil {
@@ -203,12 +202,18 @@ func (c *GeminiClient) makeRequest(model string, payload *GeminiRequest) (*Gemin
 			return nil, err
 		}
 
-		// Handle retryable status codes (503 High demand, 429 Rate limit, 500 Server error)
-		if resp.StatusCode == 503 || resp.StatusCode == 429 || resp.StatusCode == 500 {
+		// Handle retryable status codes (503 High demand, 500 Server error)
+		if resp.StatusCode == 503 || resp.StatusCode == 500 {
 			if attempt < maxRetries-1 {
+				log.Printf("[Gemini 503/500] Máy chủ quá tải (lần thử %d/%d cho %s). Thử lại sau %v...", attempt+1, maxRetries, backoffSec*time.Duration(attempt+1))
 				time.Sleep(backoffSec * time.Duration(attempt+1))
 				continue
 			}
+		}
+
+		if resp.StatusCode == 429 {
+			log.Printf("[Gemini ERROR 429]: Rate limit / Quota exceeded for model %s", model)
+			return nil, fmt.Errorf("Gemini Quota (429): Bạn đã dùng hết hạn mức tạm thời của mô hình '%s'. Vui lòng chờ khoảng 20-30 giây rồi gửi lại tin nhắn.", model)
 		}
 
 		if resp.StatusCode != http.StatusOK {
@@ -236,6 +241,19 @@ func (c *GeminiClient) makeRequest(model string, payload *GeminiRequest) (*Gemin
 	return nil, fmt.Errorf("Gemini request failed after %d retries", maxRetries)
 }
 
+func getFallbackModel(current string) string {
+	switch current {
+	case "gemini-3.8-flash":
+		return "gemini-3.6-flash"
+	case "gemini-3.7-flash":
+		return "gemini-3.6-flash"
+	case "gemini-3.6-flash":
+		return "gemini-3.7-flash"
+	default:
+		return "gemini-3.6-flash"
+	}
+}
+
 func (c *GeminiClient) ChatWithVault(
 	vault *VaultManager,
 	contents []GeminiContent,
@@ -243,8 +261,8 @@ func (c *GeminiClient) ChatWithVault(
 	systemInstruction string,
 	enableVaultTools bool,
 ) (ChatResult, error) {
-	if model == "" {
-		model = "gemini-2.5-flash"
+	if model == "" || model == "gemini-2.5-flash" {
+		model = "gemini-3.6-flash"
 	}
 
 	workingContents := make([]GeminiContent, len(contents))
@@ -276,10 +294,22 @@ func (c *GeminiClient) ChatWithVault(
 	for hop := 0; hop < maxToolHops; hop++ {
 		resp, err := c.makeRequest(model, payload)
 		if err != nil {
-			// If tools were enabled and we got a 400 Bad Request on the first hop, retry once without tools
-			if enableVaultTools && hop == 0 && strings.Contains(err.Error(), "(400)") {
-				log.Printf("[Gemini WARN] 400 error with tools; retrying without tools for model %s: %v", model, err)
+			// If 503 (high demand) or 404 (model deprecated), automatically try fallback model
+			if strings.Contains(err.Error(), "503") || strings.Contains(err.Error(), "404") {
+				fallback := getFallbackModel(model)
+				if fallback != model {
+					log.Printf("[Gemini Fallback] Model %s gặp sự cố (%v). Tự động chuyển sang mô hình %s...", model, err, fallback)
+					resp, err = c.makeRequest(fallback, payload)
+				}
+			}
+		}
+
+		if err != nil {
+			// If tools were enabled and we got a 400 Bad Request on any hop, retry once cleanly without tools
+			if enableVaultTools && strings.Contains(err.Error(), "(400)") {
+				log.Printf("[Gemini WARN] 400 error with tools (hop %d); retrying cleanly without tools for model %s: %v", hop, model, err)
 				payload.Tools = nil
+				payload.Contents = contents
 				resp, err = c.makeRequest(model, payload)
 				if err != nil {
 					return ChatResult{}, err
@@ -294,6 +324,25 @@ func (c *GeminiClient) ChatWithVault(
 		}
 
 		candidate := resp.Candidates[0]
+
+		// Normalize thought signatures across parts and function calls (critical for Gemini 3)
+		for i := range candidate.Content.Parts {
+			p := &candidate.Content.Parts[i]
+			if p.ThoughtSigCamel != "" && p.ThoughtSignature == "" {
+				p.ThoughtSignature = p.ThoughtSigCamel
+			}
+			if p.FunctionCall != nil {
+				if p.FunctionCall.ThoughtSigCamel != "" && p.FunctionCall.ThoughtSignature == "" {
+					p.FunctionCall.ThoughtSignature = p.FunctionCall.ThoughtSigCamel
+				}
+				if p.ThoughtSignature != "" && p.FunctionCall.ThoughtSignature == "" {
+					p.FunctionCall.ThoughtSignature = p.ThoughtSignature
+				}
+				if p.FunctionCall.ThoughtSignature != "" && p.ThoughtSignature == "" {
+					p.ThoughtSignature = p.FunctionCall.ThoughtSignature
+				}
+			}
+		}
 		parts := candidate.Content.Parts
 
 		// Check for function calls

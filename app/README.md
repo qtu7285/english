@@ -4,13 +4,15 @@
 
 ---
 
-## 1. Động cơ Golang (High Performance & Ultra Lightweight)
+## 1. Động cơ Golang 100% (High Performance & Ultra Lightweight)
 
-Hệ thống được chuyển đổi hoàn toàn sang **Golang**:
-* **Bộ nhớ RAM cực thấp:** Chỉ chiếm ~**10MB RAM** khi chạy nền (so với ~50MB của Python).
+Hệ thống được chuyển đổi hoàn toàn sang **Golang thuần**, loại bỏ hoàn toàn Python:
+* **Bộ nhớ RAM cực thấp:** Chỉ chiếm ~**9.7MB RAM** khi chạy nền (so với ~50MB của Python).
 * **Mát máy, tiết kiệm pin:** Tận dụng đa luồng thực thụ trên ARM64, CPU gần như 0% khi chờ.
-* **Thời gian build:** Chỉ mất ~2-3 giây trên Termux.
-* **Tự động chuyển đổi:** Script `run.sh` tự động biên dịch và chạy Golang binary tại `$HOME/.local/bin/english-server`, có cơ chế fallback về Python nếu máy chưa cài Go.
+* **Thời gian build:** Chỉ mất ~2 giây trên Termux (`bash app/build.sh`).
+* **Hỗ trợ 2 chế độ AI Engine:**
+  1. **Antigravity CLI (Termux Pro):** Sử dụng trực tiếp tài khoản Pro đã đăng nhập trên Termux qua lệnh `agy`, không cần nhập API Key, không lo bị giới hạn hạn mức (Quota 429) hay 503.
+  2. **Google Gemini REST API:** Kết nối trực tiếp qua API Key, phản hồi siêu tốc (~1 giây).
 
 ---
 
@@ -21,10 +23,8 @@ app/
 ├── api/
 │   ├── main.go         # Máy chủ HTTP Go, định tuyến API & phục vụ Web tĩnh
 │   ├── vault.go        # Module quản lý Vault an toàn (Go)
-│   ├── gemini.go       # Kết nối Gemini API với Function Calling & Auto-Retry (Go)
-│   ├── server.py       # Bản sao lưu dự phòng Python
-│   ├── vault.py        # Bản sao lưu dự phòng Python
-│   └── gemini.py       # Bản sao lưu dự phòng Python
+│   ├── antigravity.go  # Tích hợp Antigravity CLI Pro trên Termux (Go)
+│   └── gemini.go       # Kết nối Gemini REST API với Function Calling & Thought Signatures (Go)
 ├── web/
 │   ├── index.html      # Giao diện web mobile-friendly
 │   ├── style.css       # Giao diện Dark theme, nút phát âm cuối câu
