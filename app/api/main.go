@@ -201,6 +201,121 @@ func (s *ServerApp) handleStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type UserProfile struct {
+	Username    string  `json:"username"`
+	DisplayName string  `json:"display_name"`
+	AvatarUser  string  `json:"avatar_user"`
+	AvatarAI    string  `json:"avatar_ai"`
+	AIEngine    string  `json:"ai_engine,omitempty"`
+	GeminiModel string  `json:"gemini_model,omitempty"`
+	TTSRate     float64 `json:"tts_rate,omitempty"`
+	UpdatedAt   string  `json:"updated_at,omitempty"`
+}
+
+var validUserRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]*$`)
+
+func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method == "GET" {
+		username := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("username")))
+		if username == "" {
+			username = "qtu"
+		}
+		if !validUserRegex.MatchString(username) {
+			sendError(w, http.StatusBadRequest, "Invalid username format. Must match ^[a-z0-9][a-z0-9_-]*$")
+			return
+		}
+
+		userDir := filepath.Join(s.Vault.RootDir, "USERS", username)
+		profilePath := filepath.Join(userDir, "profile.json")
+
+		data, err := os.ReadFile(profilePath)
+		if err != nil {
+			defaultProf := UserProfile{
+				Username:    username,
+				DisplayName: username,
+				AvatarUser:  "🧑‍🎓",
+				AvatarAI:    "🤖",
+				AIEngine:    "antigravity",
+				GeminiModel: "gemini-3.6-flash",
+				TTSRate:     0.9,
+				UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
+			}
+			sendJSON(w, http.StatusOK, defaultProf)
+			return
+		}
+
+		var prof UserProfile
+		if err := json.Unmarshal(data, &prof); err != nil {
+			sendError(w, http.StatusInternalServerError, "Malformed profile.json: "+err.Error())
+			return
+		}
+		sendJSON(w, http.StatusOK, prof)
+		return
+	}
+
+	if r.Method == "POST" {
+		var prof UserProfile
+		if err := json.NewDecoder(r.Body).Decode(&prof); err != nil {
+			sendError(w, http.StatusBadRequest, "Invalid JSON payload: "+err.Error())
+			return
+		}
+
+		prof.Username = strings.ToLower(strings.TrimSpace(prof.Username))
+		if prof.Username == "" {
+			prof.Username = "qtu"
+		}
+		if !validUserRegex.MatchString(prof.Username) {
+			sendError(w, http.StatusBadRequest, "Invalid username format. Must match ^[a-z0-9][a-z0-9_-]*$")
+			return
+		}
+
+		if prof.DisplayName == "" {
+			prof.DisplayName = prof.Username
+		}
+		if prof.AvatarUser == "" {
+			prof.AvatarUser = "🧑‍🎓"
+		}
+		if prof.AvatarAI == "" {
+			prof.AvatarAI = "🤖"
+		}
+		if prof.TTSRate == 0 {
+			prof.TTSRate = 0.9
+		}
+		prof.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+
+		userDir := filepath.Join(s.Vault.RootDir, "USERS", prof.Username)
+		if err := os.MkdirAll(userDir, 0755); err != nil {
+			sendError(w, http.StatusInternalServerError, "Failed to create user directory: "+err.Error())
+			return
+		}
+
+		profilePath := filepath.Join(userDir, "profile.json")
+		data, err := json.MarshalIndent(prof, "", "  ")
+		if err != nil {
+			sendError(w, http.StatusInternalServerError, "Failed to serialize profile: "+err.Error())
+			return
+		}
+
+		if err := os.WriteFile(profilePath, data, 0644); err != nil {
+			sendError(w, http.StatusInternalServerError, "Failed to write profile.json: "+err.Error())
+			return
+		}
+
+		sendJSON(w, http.StatusOK, prof)
+		return
+	}
+
+	sendError(w, http.StatusMethodNotAllowed, "Method not allowed")
+}
+
 func (s *ServerApp) handleVaultList(w http.ResponseWriter, r *http.Request) {
 	subpath := r.URL.Query().Get("subpath")
 	files, err := s.Vault.ListFiles(subpath, 3)
@@ -492,6 +607,7 @@ func main() {
 	mux.HandleFunc("/api/vault/write", app.handleVaultWrite)
 	mux.HandleFunc("/api/vault/search", app.handleVaultSearch)
 	mux.HandleFunc("/api/chat", app.handleChat)
+	mux.HandleFunc("/api/user/profile", app.handleUserProfile)
 
 	// Cho thiết bị khác trong tailnet tải CA về cài, khỏi phải copy file thủ công.
 	mux.HandleFunc("/ca.crt", func(w http.ResponseWriter, r *http.Request) {

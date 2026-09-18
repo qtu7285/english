@@ -62,6 +62,12 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
   - [x] Thanh Quick Chips tự động ẩn hoàn toàn khi không có chip nào để giao diện tối giản, thoáng mắt.
   - [x] Cố định `html`, `body` với `position: fixed; inset: 0; overscroll-behavior: none;`, `history.scrollRestoration = 'manual'`, và `flex-shrink: 0` trên `.app-footer`, `.app-header` cùng `min-height: 0` trên `.chat-viewport` nhằm triệt tiêu hoàn toàn hiện tượng lệch viewport hay che khuất ô gõ văn bản sau khi refresh.
 
+- [x] **Bước 12: Tối giản Thanh Header - Gỡ bỏ Nút Vault và Modal Duyệt File khỏi Giao diện Học viên**
+  - [x] Xóa nút `#vaultBtn` trên thanh Header trong [`index.html`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/index.html).
+  - [x] Xóa modal `#vaultModal` khỏi DOM, bọc an toàn các sự kiện trong [`app.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/app.js).
+  - [x] Nâng cấp Service Worker lên `engtutor-v5` trong [`sw.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/sw.js).
+  - [x] Thanh Header trên điện thoại giờ chỉ còn logo, nút Cài đặt và nút Xóa cuộc trò chuyện, cực kỳ thoáng mắt và tập trung 100% vào học tiếng Anh.
+
 ---
 
 ## 3. Tiêu chuẩn Nghiệm thu
@@ -69,10 +75,11 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
 1. [x] Giao diện hiển thị trọn vẹn, không bị tràn ngang ở mọi độ phân giải màn hình từ 360px trở lên.
 2. [x] Khi bật bàn phím ảo, khung chat co giãn chuẩn xác, không che khuất ô nhập liệu.
 3. [x] Thanh điều hướng cử chỉ đáy màn hình không đè lên thanh nhập liệu.
-4. [x] Mở được nội dung file trong Vault trên điện thoại và quay lại danh sách bình thường.
+4. [x] Thanh Header được tinh giản tối đa, loại bỏ nút Vault không cần thiết cho học viên.
 5. [x] Chạm vào ô nhập liệu không bị phóng to màn hình trên iOS.
 6. [x] Nhập một từ (ví dụ `urge`) tự động gửi `.urge` mà không cần người dùng gõ dấu chấm.
 7. [x] Khi chỉnh sửa file CSS/JS/HTML, trình duyệt tự động cập nhật ngay lập tức nhờ Go Live-Reload.
 8. [x] Nút `3 câu luyện`, `5 câu luyện` chỉ xuất hiện đúng lúc (sau khi giải nghĩa từ), và ẩn hoàn toàn khi đang làm bài test.
 9. [x] Thao tác vuốt xuống khi đang ở đỉnh trang chat kích hoạt hiệu ứng loading, rung nhẹ và tự động làm mới ứng dụng (tiện dụng trên PWA).
 10. [x] Không còn các nút lệnh `.` cố định ban đầu; ô gõ tin nhắn luôn hiển thị trọn vẹn, không bị đẩy trôi hoặc che khuất sau khi refresh trang.
+11. [x] Giao diện người học tinh gọn, tập trung hoàn toàn vào hội thoại học tập, tra từ và làm bài tập.

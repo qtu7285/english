@@ -34,12 +34,6 @@
           </svg>
           <span class="btn-label">Cài đặt</span>
         </button>
-        <button class="icon-btn" id="vaultBtn" title="Quản lý Vault / File">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
-          <span class="btn-label">Vault</span>
-        </button>
         <button class="icon-btn" id="settingsBtn" title="Cài đặt API">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
@@ -65,7 +59,7 @@
       <div class="chat-messages" id="chatMessages">
         <!-- Initial Welcome Message -->
         <div class="message-row assistant">
-          <div class="avatar">AI</div>
+          <div class="avatar" id="initialAiAvatar">🤖</div>
           <div class="bubble">
             <div class="bubble-content">
               <p style="font-weight: 700; color: #38bdf8; line-height: 1.6; font-size: 15px;">
@@ -111,7 +105,48 @@
           <button class="close-btn" id="closeSettingsBtn">&times;</button>
         </div>
         <div class="modal-body">
-          <div class="form-group">
+          <!-- User Profile & Avatar Section -->
+          <div class="settings-section">
+            <h3 class="settings-section-title">Hồ sơ & Cá nhân hóa</h3>
+            
+            <div class="form-group">
+              <label for="usernameInput">Người học (Username):</label>
+              <input type="text" id="usernameInput" placeholder="qtu" value="qtu" autocomplete="off" spellcheck="false">
+              <small class="form-hint">Dữ liệu cá nhân được lưu trữ riêng tại: <code>USERS/&lt;username&gt;/</code></small>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+              <label>Avatar của bạn (User):</label>
+              <div class="avatar-picker" id="userAvatarPicker">
+                <button type="button" class="avatar-opt selected" data-avatar="🧑‍🎓" title="Học viên">🧑‍🎓</button>
+                <button type="button" class="avatar-opt" data-avatar="🦊" title="Cáo thông thái">🦊</button>
+                <button type="button" class="avatar-opt" data-avatar="🦉" title="Cú tri thức">🦉</button>
+                <button type="button" class="avatar-opt" data-avatar="🚀" title="Khám phá">🚀</button>
+                <button type="button" class="avatar-opt" data-avatar="🐱" title="Mèo tập trung">🐱</button>
+                <button type="button" class="avatar-opt" data-avatar="🦁" title="Sư tử dũng mãnh">🦁</button>
+                <button type="button" class="avatar-opt" data-avatar="🧑‍💻" title="Lập trình viên">🧑‍💻</button>
+                <button type="button" class="avatar-opt" data-avatar="⚡" title="Năng lượng">⚡</button>
+              </div>
+              <input type="text" id="customUserAvatarInput" placeholder="Hoặc nhập emoji / tên viết tắt (ví dụ: QT)..." maxlength="8" style="margin-top: 8px;">
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+              <label>Avatar của Gia sư AI:</label>
+              <div class="avatar-picker" id="aiAvatarPicker">
+                <button type="button" class="avatar-opt selected" data-avatar="🤖" title="Robot gia sư">🤖</button>
+                <button type="button" class="avatar-opt" data-avatar="🧙‍♂️" title="Pháp sư ngôn ngữ">🧙‍♂️</button>
+                <button type="button" class="avatar-opt" data-avatar="🧠" title="Trí tuệ nhân tạo">🧠</button>
+                <button type="button" class="avatar-opt" data-avatar="🦉" title="Cú uyên bác">🦉</button>
+                <button type="button" class="avatar-opt" data-avatar="⚡" title="Tia chớp">⚡</button>
+                <button type="button" class="avatar-opt" data-avatar="💎" title="Pha lê">💎</button>
+                <button type="button" class="avatar-opt" data-avatar="🛸" title="Công nghệ cao">🛸</button>
+                <button type="button" class="avatar-opt" data-avatar="🎓" title="Hàn lâm">🎓</button>
+              </div>
+              <input type="text" id="customAiAvatarInput" placeholder="Hoặc nhập emoji / tên viết tắt (ví dụ: AI)..." maxlength="8" style="margin-top: 8px;">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 16px;">
             <label for="engineSelect">Động cơ AI (Engine):</label>
             <select id="engineSelect">
               <option value="antigravity" selected>Antigravity CLI (Termux Pro - Không cần API Key)</option>
@@ -156,33 +191,6 @@
       </div>
     </div>
 
-    <!-- Vault Modal / File Drawer -->
-    <div class="modal-backdrop hidden" id="vaultModal">
-      <div class="modal-card modal-large">
-        <div class="modal-header">
-          <h2>Kho tài liệu & Từ vựng (Vault)</h2>
-          <button class="close-btn" id="closeVaultBtn">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="vault-toolbar">
-            <input type="text" id="vaultSearchInput" placeholder="Tìm kiếm từ vựng hoặc ghi chú trong vault...">
-            <button class="btn btn-secondary" id="refreshVaultBtn">Làm mới</button>
-          </div>
-          <div class="vault-layout" id="vaultLayout">
-            <div class="vault-file-list" id="vaultFileList">
-              <div class="loading-state">Đang tải danh sách file...</div>
-            </div>
-            <div class="vault-preview" id="vaultPreview">
-              <div class="preview-placeholder">Chọn một file để xem trước nội dung</div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" id="vaultBackBtn" style="display: none; margin-right: auto;">← Danh sách</button>
-          <button class="btn btn-secondary" id="insertToChatBtn" disabled>Thêm nội dung vào chat</button>
-        </div>
-      </div>
-    </div>
 
   </div>
 

@@ -28,6 +28,9 @@ syncAppHeight();
 
 // State
 const state = {
+  username: localStorage.getItem("username") || "qtu",
+  avatarUser: localStorage.getItem("avatar_user") || "🧑‍🎓",
+  avatarAI: localStorage.getItem("avatar_ai") || "🤖",
   engine: localStorage.getItem("ai_engine") || "antigravity",
   apiKey: localStorage.getItem("gemini_api_key") || "",
   model: initialModel,
@@ -45,11 +48,17 @@ const chatForm = document.getElementById("chatForm");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 const clearBtn = document.getElementById("clearBtn");
+const initialAiAvatar = document.getElementById("initialAiAvatar");
 
 const settingsBtn = document.getElementById("settingsBtn");
 const settingsModal = document.getElementById("settingsModal");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+const usernameInput = document.getElementById("usernameInput");
+const userAvatarPicker = document.getElementById("userAvatarPicker");
+const customUserAvatarInput = document.getElementById("customUserAvatarInput");
+const aiAvatarPicker = document.getElementById("aiAvatarPicker");
+const customAiAvatarInput = document.getElementById("customAiAvatarInput");
 const engineSelect = document.getElementById("engineSelect");
 const engineHint = document.getElementById("engineHint");
 const apiKeyGroup = document.getElementById("apiKeyGroup");
@@ -70,6 +79,47 @@ const vaultFileList = document.getElementById("vaultFileList");
 const vaultPreview = document.getElementById("vaultPreview");
 const vaultBackBtn = document.getElementById("vaultBackBtn");
 const insertToChatBtn = document.getElementById("insertToChatBtn");
+
+// Cập nhật biểu tượng avatar trong toàn bộ cuộc trò chuyện
+function updateExistingAvatarsInChat() {
+  if (initialAiAvatar) {
+    initialAiAvatar.innerText = state.avatarAI || "🤖";
+  }
+  document.querySelectorAll(".message-row.assistant:not(.loading-row) .avatar").forEach(av => {
+    av.innerText = state.avatarAI || "🤖";
+  });
+  document.querySelectorAll(".message-row.user .avatar").forEach(av => {
+    av.innerText = state.avatarUser || "🧑‍🎓";
+  });
+}
+
+// Đồng bộ hồ sơ người dùng từ USERS/<username>/profile.json trên máy chủ
+async function syncUserProfileFromServer(targetUser = null) {
+  try {
+    const u = (targetUser || state.username || "qtu").trim().toLowerCase();
+    const res = await fetch(`/api/user/profile?username=${encodeURIComponent(u)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.username) state.username = data.username;
+    if (data.avatar_user) state.avatarUser = data.avatar_user;
+    if (data.avatar_ai) state.avatarAI = data.avatar_ai;
+    if (data.ai_engine) state.engine = data.ai_engine;
+    if (data.gemini_model) state.model = data.gemini_model;
+    if (data.tts_rate) state.ttsRate = data.tts_rate;
+
+    localStorage.setItem("username", state.username);
+    localStorage.setItem("avatar_user", state.avatarUser);
+    localStorage.setItem("avatar_ai", state.avatarAI);
+    localStorage.setItem("ai_engine", state.engine);
+    localStorage.setItem("gemini_model", state.model);
+    localStorage.setItem("tts_rate", state.ttsRate);
+
+    updateExistingAvatarsInChat();
+  } catch (e) {
+    console.warn("[Profile] Đồng bộ profile từ server bị hoãn:", e);
+  }
+}
+syncUserProfileFromServer();
 
 // Haptic feedback helper for mobile touch
 function triggerHaptic(ms = 25) {
@@ -570,7 +620,7 @@ function appendMessage(role, text, toolLogs = []) {
 
   const avatar = document.createElement("div");
   avatar.className = "avatar";
-  avatar.innerText = role === "user" ? "YOU" : "AI";
+  avatar.innerText = role === "user" ? (state.avatarUser || "🧑‍🎓") : (state.avatarAI || "🤖");
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
@@ -692,7 +742,7 @@ function createLoadingIndicator() {
 
   const avatar = document.createElement("div");
   avatar.className = "avatar avatar-thinking";
-  avatar.innerText = "AI";
+  avatar.innerText = state.avatarAI || "🤖";
 
   const bubble = document.createElement("div");
   bubble.className = "bubble bubble-loading";
@@ -771,6 +821,15 @@ async function handleSendMessage(msgText) {
   messageInput.value = "";
   messageInput.style.height = "auto";
   updateDynamicChoices([]);
+
+  // Neu nguoi hoc chuyen username bang cu phap #username (vi du: #minh, #qtu)
+  const usernameMatch = text.match(/^#([a-z0-9][a-z0-9_-]*)$/i);
+  if (usernameMatch) {
+    const newU = usernameMatch[1].toLowerCase();
+    state.username = newU;
+    localStorage.setItem("username", newU);
+    syncUserProfileFromServer(newU);
+  }
 
   // Prior history (before this current turn)
   const priorHistory = state.conversation.slice(-10);
@@ -948,7 +1007,78 @@ modelSelect.onchange = () => {
   }
 };
 
+// Avatar picker events
+if (userAvatarPicker) {
+  userAvatarPicker.addEventListener("click", (e) => {
+    const btn = e.target.closest(".avatar-opt");
+    if (!btn) return;
+    triggerHaptic(15);
+    userAvatarPicker.querySelectorAll(".avatar-opt").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    if (customUserAvatarInput) customUserAvatarInput.value = "";
+  });
+}
+if (customUserAvatarInput) {
+  customUserAvatarInput.addEventListener("input", () => {
+    if (customUserAvatarInput.value.trim() && userAvatarPicker) {
+      userAvatarPicker.querySelectorAll(".avatar-opt").forEach(b => b.classList.remove("selected"));
+    }
+  });
+}
+
+if (aiAvatarPicker) {
+  aiAvatarPicker.addEventListener("click", (e) => {
+    const btn = e.target.closest(".avatar-opt");
+    if (!btn) return;
+    triggerHaptic(15);
+    aiAvatarPicker.querySelectorAll(".avatar-opt").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    if (customAiAvatarInput) customAiAvatarInput.value = "";
+  });
+}
+if (customAiAvatarInput) {
+  customAiAvatarInput.addEventListener("input", () => {
+    if (customAiAvatarInput.value.trim() && aiAvatarPicker) {
+      aiAvatarPicker.querySelectorAll(".avatar-opt").forEach(b => b.classList.remove("selected"));
+    }
+  });
+}
+
 settingsBtn.onclick = () => {
+  if (usernameInput) usernameInput.value = state.username || "qtu";
+
+  // Đồng bộ picker Avatar User
+  if (userAvatarPicker) {
+    let matchedUser = false;
+    userAvatarPicker.querySelectorAll(".avatar-opt").forEach(b => {
+      if (b.getAttribute("data-avatar") === state.avatarUser) {
+        b.classList.add("selected");
+        matchedUser = true;
+      } else {
+        b.classList.remove("selected");
+      }
+    });
+    if (customUserAvatarInput) {
+      customUserAvatarInput.value = matchedUser ? "" : (state.avatarUser || "");
+    }
+  }
+
+  // Đồng bộ picker Avatar AI
+  if (aiAvatarPicker) {
+    let matchedAi = false;
+    aiAvatarPicker.querySelectorAll(".avatar-opt").forEach(b => {
+      if (b.getAttribute("data-avatar") === state.avatarAI) {
+        b.classList.add("selected");
+        matchedAi = true;
+      } else {
+        b.classList.remove("selected");
+      }
+    });
+    if (customAiAvatarInput) {
+      customAiAvatarInput.value = matchedAi ? "" : (state.avatarAI || "");
+    }
+  }
+
   engineSelect.value = state.engine;
   updateEngineUI();
   apiKeyInput.value = state.apiKey;
@@ -972,6 +1102,32 @@ settingsBtn.onclick = () => {
 closeSettingsBtn.onclick = () => settingsModal.classList.add("hidden");
 
 saveSettingsBtn.onclick = () => {
+  // Username
+  let newUsername = state.username || "qtu";
+  if (usernameInput) {
+    const raw = usernameInput.value.trim().toLowerCase();
+    if (raw && /^[a-z0-9][a-z0-9_-]*$/.test(raw)) {
+      newUsername = raw;
+    }
+  }
+  state.username = newUsername;
+
+  // User avatar
+  if (customUserAvatarInput && customUserAvatarInput.value.trim()) {
+    state.avatarUser = customUserAvatarInput.value.trim();
+  } else if (userAvatarPicker) {
+    const sel = userAvatarPicker.querySelector(".avatar-opt.selected");
+    if (sel) state.avatarUser = sel.getAttribute("data-avatar");
+  }
+
+  // AI avatar
+  if (customAiAvatarInput && customAiAvatarInput.value.trim()) {
+    state.avatarAI = customAiAvatarInput.value.trim();
+  } else if (aiAvatarPicker) {
+    const sel = aiAvatarPicker.querySelector(".avatar-opt.selected");
+    if (sel) state.avatarAI = sel.getAttribute("data-avatar");
+  }
+
   state.engine = engineSelect.value;
   state.apiKey = apiKeyInput.value.trim();
 
@@ -984,15 +1140,35 @@ saveSettingsBtn.onclick = () => {
   state.enableVaultTools = enableVaultToolsCheck.checked;
   state.ttsRate = parseFloat(ttsRate.value);
 
+  localStorage.setItem("username", state.username);
+  localStorage.setItem("avatar_user", state.avatarUser);
+  localStorage.setItem("avatar_ai", state.avatarAI);
   localStorage.setItem("ai_engine", state.engine);
   localStorage.setItem("gemini_api_key", state.apiKey);
   localStorage.setItem("gemini_model", state.model);
   localStorage.setItem("enable_vault_tools", state.enableVaultTools);
   localStorage.setItem("tts_rate", state.ttsRate);
 
+  updateExistingAvatarsInChat();
+
+  // Lưu cấu hình vào USERS/<username>/profile.json qua API Golang
+  fetch("/api/user/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: state.username,
+      display_name: state.username,
+      avatar_user: state.avatarUser,
+      avatar_ai: state.avatarAI,
+      ai_engine: state.engine,
+      gemini_model: state.model,
+      tts_rate: state.ttsRate
+    })
+  }).catch(e => console.warn("[Profile] Lưu profile lên server thất bại:", e));
+
   settingsModal.classList.add("hidden");
   const engineDesc = state.engine === "antigravity" ? "Antigravity CLI (Termux Pro)" : `Gemini REST API (${state.model})`;
-  appendMessage("assistant", `[OK] Đã lưu cài đặt thành công (Động cơ: ${engineDesc}).`);
+  appendMessage("assistant", `[OK] Đã lưu cài đặt cho người học #${state.username} (Avatar: ${state.avatarUser} & ${state.avatarAI}).`);
 };
 
 ttsRate.oninput = () => {
@@ -1002,56 +1178,64 @@ ttsRate.oninput = () => {
 // Purge OAuth credentials left in localStorage by earlier versions
 ["gemini_oauth_token", "oauth_client_id", "oauth_client_secret"].forEach(k => localStorage.removeItem(k));
 
-// Vault Modal Handlers
-vaultBtn.onclick = () => {
-  resetVaultMobileView();
-  vaultModal.classList.remove("hidden");
-  loadVaultFiles();
-};
-
-if (vaultBackBtn) {
-  vaultBackBtn.onclick = () => {
+// Vault Modal Handlers (khi có trong DOM)
+if (vaultBtn && vaultModal) {
+  vaultBtn.onclick = () => {
     resetVaultMobileView();
-  };
-}
-
-closeVaultBtn.onclick = () => {
-  vaultModal.classList.add("hidden");
-  resetVaultMobileView();
-};
-refreshVaultBtn.onclick = () => loadVaultFiles();
-
-vaultSearchInput.oninput = async (e) => {
-  const q = e.target.value.trim();
-  if (!q) {
+    vaultModal.classList.remove("hidden");
     loadVaultFiles();
-    return;
-  }
-  resetVaultMobileView();
-  try {
-    const res = await fetch(`/api/vault/search?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    renderVaultFiles((data.matches || []).map(m => ({
-      name: m.path.split("/").pop(),
-      path: m.path,
-      type: m.match_type === "filename" ? "file" : `line ${m.line}`
-    })));
-  } catch (err) {}
-};
+  };
 
-insertToChatBtn.onclick = () => {
-  if (state.selectedVaultFile && vaultPreview.innerText) {
-    messageInput.value = `Hãy phân tích nội dung file ${state.selectedVaultFile.path}:\n\n` + vaultPreview.innerText.slice(0, 1000);
-    vaultModal.classList.add("hidden");
-    resetVaultMobileView();
-    messageInput.focus();
+  if (vaultBackBtn) {
+    vaultBackBtn.onclick = () => {
+      resetVaultMobileView();
+    };
   }
-};
+
+  if (closeVaultBtn) {
+    closeVaultBtn.onclick = () => {
+      vaultModal.classList.add("hidden");
+      resetVaultMobileView();
+    };
+  }
+  if (refreshVaultBtn) refreshVaultBtn.onclick = () => loadVaultFiles();
+
+  if (vaultSearchInput) {
+    vaultSearchInput.oninput = async (e) => {
+      const q = e.target.value.trim();
+      if (!q) {
+        loadVaultFiles();
+        return;
+      }
+      resetVaultMobileView();
+      try {
+        const res = await fetch(`/api/vault/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        renderVaultFiles((data.matches || []).map(m => ({
+          name: m.path.split("/").pop(),
+          path: m.path,
+          type: m.match_type === "filename" ? "file" : `line ${m.line}`
+        })));
+      } catch (err) {}
+    };
+  }
+
+  if (insertToChatBtn) {
+    insertToChatBtn.onclick = () => {
+      if (state.selectedVaultFile && vaultPreview.innerText) {
+        messageInput.value = `Hãy phân tích nội dung file ${state.selectedVaultFile.path}:\n\n` + vaultPreview.innerText.slice(0, 1000);
+        vaultModal.classList.add("hidden");
+        resetVaultMobileView();
+        messageInput.focus();
+      }
+    };
+  }
+}
 
 // Close modal on click outside
 window.onclick = (e) => {
   if (e.target === settingsModal) settingsModal.classList.add("hidden");
-  if (e.target === vaultModal) {
+  if (vaultModal && e.target === vaultModal) {
     vaultModal.classList.add("hidden");
     resetVaultMobileView();
   }
