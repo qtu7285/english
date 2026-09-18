@@ -57,6 +57,11 @@
 
     <!-- Main Chat Window -->
     <main class="chat-viewport" id="chatViewport">
+      <!-- Pull to Refresh Indicator -->
+      <div class="pull-to-refresh" id="ptrIndicator">
+        <div class="ptr-spinner" id="ptrSpinner"></div>
+        <span class="ptr-label" id="ptrLabel">Kéo xuống để làm mới</span>
+      </div>
       <div class="chat-messages" id="chatMessages">
         <!-- Initial Welcome Message -->
         <div class="message-row assistant">

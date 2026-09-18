@@ -52,6 +52,11 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
   - [x] Trong [`app.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/app.js), chỉ tự động hiện các nút chọn số câu (`3 câu luyện`, `5 câu luyện`, `10 câu`) sau khi AI giải nghĩa xong từ vựng (khi xuất hiện `[NEXT]`).
   - [x] Khi đang trong bài test (`Câu 1/N`, `Câu 2/N`...): ẩn hoàn toàn các nút chọn số câu, chỉ hiện các phím trắc nghiệm `[A] [B] [C] [D]` để người học tập trung trả lời và tuyệt đối không thể bấm nhầm làm hỏng bài test.
 
+- [x] **Bước 10: Tích hợp Cử chỉ Vuốt xuống để Làm mới (Pull-to-Refresh)**
+  - [x] Thêm thành phần hiển thị loading `#ptrIndicator`, `#ptrSpinner`, `#ptrLabel` trong [`index.html`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/index.html).
+  - [x] Định dạng hiệu ứng chuyển động mượt mà và biểu tượng xoay trong [`style.css`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/style.css).
+  - [x] Xử lý cảm ứng `touchstart`, `touchmove`, `touchend` với hiệu ứng co giãn đàn hồi (rubber-band) và phản hồi rung haptic khi đạt ngưỡng kích hoạt trong [`app.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/app.js).
+
 ---
 
 ## 3. Tiêu chuẩn Nghiệm thu
@@ -64,3 +69,4 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
 6. [x] Nhập một từ (ví dụ `urge`) tự động gửi `.urge` mà không cần người dùng gõ dấu chấm.
 7. [x] Khi chỉnh sửa file CSS/JS/HTML, trình duyệt tự động cập nhật ngay lập tức nhờ Go Live-Reload.
 8. [x] Nút `3 câu luyện`, `5 câu luyện` chỉ xuất hiện đúng lúc (sau khi giải nghĩa từ), và ẩn hoàn toàn khi đang làm bài test.
+9. [x] Thao tác vuốt xuống khi đang ở đỉnh trang chat kích hoạt hiệu ứng loading, rung nhẹ và tự động làm mới ứng dụng (tiện dụng trên PWA).

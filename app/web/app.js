@@ -1229,3 +1229,77 @@ if (window.isSecureContext && "serviceWorker" in navigator) {
 // Khoi tao chip ngu canh ban dau (hien thi tu mau de hoc thu)
 updateContextChips("");
 
+// Pull-to-Refresh Gesture Handling cho PWA va trinh duyet di dong
+(function initPullToRefresh() {
+  const ptr = document.getElementById("ptrIndicator");
+  const spinner = document.getElementById("ptrSpinner");
+  const label = document.getElementById("ptrLabel");
+  if (!ptr || !spinner || !label || !chatViewport) return;
+
+  let startY = 0;
+  let isPulling = false;
+  let hasTriggeredHaptic = false;
+  const PTR_THRESHOLD = 55;
+  const PTR_MAX = 80;
+
+  chatViewport.addEventListener("touchstart", (e) => {
+    if (chatViewport.scrollTop <= 0) {
+      startY = e.touches[0].pageY;
+      isPulling = true;
+      hasTriggeredHaptic = false;
+    } else {
+      isPulling = false;
+    }
+  }, { passive: true });
+
+  chatViewport.addEventListener("touchmove", (e) => {
+    if (!isPulling || chatViewport.scrollTop > 0) return;
+    const currentY = e.touches[0].pageY;
+    const diff = currentY - startY;
+
+    if (diff > 0) {
+      // Co giat theo luc keo rubber-band
+      const pullHeight = Math.min(diff * 0.4, PTR_MAX);
+      ptr.style.height = `${pullHeight}px`;
+      ptr.classList.add("visible");
+
+      const rotation = Math.min(pullHeight * 5, 360);
+      spinner.style.transform = `rotate(${rotation}deg)`;
+
+      if (pullHeight >= PTR_THRESHOLD) {
+        label.innerText = "Thả ra để làm mới";
+        if (!hasTriggeredHaptic) {
+          triggerHaptic(20);
+          hasTriggeredHaptic = true;
+        }
+      } else {
+        label.innerText = "Kéo xuống để làm mới";
+        hasTriggeredHaptic = false;
+      }
+    }
+  }, { passive: true });
+
+  chatViewport.addEventListener("touchend", () => {
+    if (!isPulling) return;
+    isPulling = false;
+    const pullHeight = parseFloat(ptr.style.height) || 0;
+
+    if (pullHeight >= PTR_THRESHOLD) {
+      ptr.style.height = "38px";
+      ptr.classList.add("refreshing");
+      label.innerText = "Đang làm mới...";
+      triggerHaptic(35);
+      setTimeout(() => {
+        window.location.reload();
+      }, 350);
+    } else {
+      ptr.style.height = "0px";
+      ptr.classList.remove("visible");
+      setTimeout(() => {
+        spinner.style.transform = "rotate(0deg)";
+        label.innerText = "Kéo xuống để làm mới";
+      }, 200);
+    }
+  }, { passive: true });
+})();
+
