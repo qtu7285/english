@@ -872,36 +872,96 @@ window.onclick = (e) => {
 
 // PWA Install Prompt Handler
 let deferredPrompt = null;
+let swRegisterError = null;
 const installPwaBtn = document.getElementById("installPwaBtn");
+
+// Đang chạy trong chế độ app rời => đã cài, không cần hiện nút nữa
+const isStandaloneApp =
+  (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+  window.navigator.standalone === true;
+
+function pwaPort() {
+  return location.port || (location.protocol === "https:" ? "443" : "80");
+}
+
+// Lý do cụ thể khiến Chrome chưa bắn beforeinstallprompt
+function pwaBlockReason() {
+  if (!window.isSecureContext) {
+    return (
+      "[X] Chrome chỉ cho cài PWA trên origin an toàn (HTTPS hoặc localhost).\n\n" +
+      "Địa chỉ đang mở: " + location.origin + "\n\n" +
+      "Cách 1 - mở ngay trên máy đang chạy server:\n" +
+      "  http://localhost:" + pwaPort() + "\n\n" +
+      "Cách 2 - bật HTTPS cục bộ (cài CA một lần, dùng được mọi thiết bị):\n" +
+      "  bash app/run.sh gen-cert\n" +
+      "  bash app/run.sh tls\n\n" +
+      "Cách 3 - cho Chrome tin origin này:\n" +
+      "  chrome://flags/#unsafely-treat-insecure-origin-as-secure\n" +
+      "  thêm " + location.origin + " -> Enabled -> Relaunch"
+    );
+  }
+  if (!("serviceWorker" in navigator)) {
+    return "[X] Trình duyệt này không hỗ trợ Service Worker nên không cài được PWA. Hãy mở bằng Chrome, không dùng trình duyệt trong ứng dụng khác.";
+  }
+  if (swRegisterError) {
+    return (
+      "[X] Service Worker đăng ký thất bại nên Chrome coi trang là chưa cài được.\n\n" +
+      "Chi tiết: " + swRegisterError + "\n\n" +
+      "Hãy tải lại trang một lần rồi thử lại."
+    );
+  }
+  return "[~] Chưa có lời mời cài tự động. Hãy tải lại trang một lần, sau đó bấm Menu 3 chấm của Chrome -> 'Cài đặt ứng dụng' (hoặc 'Thêm vào màn hình chính').";
+}
+
+// Luôn hiện nút khi chưa cài, chỉ đổi trạng thái sáng/mờ theo mức sẵn sàng
+function refreshInstallBtn() {
+  if (!installPwaBtn) return;
+
+  if (isStandaloneApp) {
+    installPwaBtn.classList.add("pwa-hidden");
+    return;
+  }
+
+  installPwaBtn.classList.remove("pwa-hidden");
+
+  const ready = !!deferredPrompt;
+  installPwaBtn.classList.toggle("pwa-blocked", !ready);
+  installPwaBtn.title = ready
+    ? "Cài đặt App về màn hình chính"
+    : "Chưa cài tự động được - bấm để xem lý do và cách khắc phục";
+
+  if (!ready) {
+    console.warn("[PWA] Chưa sẵn sàng cài:\n" + pwaBlockReason());
+  }
+}
 
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  if (installPwaBtn) {
-    installPwaBtn.style.display = "inline-flex";
-  }
+  refreshInstallBtn();
 });
 
 if (installPwaBtn) {
   installPwaBtn.onclick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        installPwaBtn.style.display = "none";
-      } else {
-        alert("Gợi ý: Do server đang chạy cục bộ trên Termux (localhost), máy chủ Google không thể đóng gói WebAPK tự động. Bạn chỉ cần bấm Menu 3 chấm của Chrome -> chọn 'Tạo lối tắt' (hoặc 'Thêm vào màn hình chính') là sẽ ghim được icon ứng dụng ra màn hình chính!");
-      }
-      deferredPrompt = null;
-    } else {
-      alert("Để ghim ứng dụng ra màn hình chính: Bấm Menu 3 chấm của Chrome -> chọn 'Tạo lối tắt' (hoặc 'Thêm vào màn hình chính').");
+    if (!deferredPrompt) {
+      alert(pwaBlockReason());
+      return;
     }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    if (outcome === "accepted") {
+      installPwaBtn.classList.add("pwa-hidden");
+      return;
+    }
+    refreshInstallBtn();
+    alert("Gợi ý: Do server chạy cục bộ trên Termux, Google không đóng gói WebAPK tự động được. Bấm Menu 3 chấm của Chrome -> 'Tạo lối tắt' (hoặc 'Thêm vào màn hình chính') là vẫn ghim được icon ra màn hình chính.");
   };
 }
 
 window.addEventListener("appinstalled", () => {
-  if (installPwaBtn) installPwaBtn.style.display = "none";
   deferredPrompt = null;
+  if (installPwaBtn) installPwaBtn.classList.add("pwa-hidden");
 });
 
 // Register PWA Service Worker
@@ -921,8 +981,26 @@ if ('serviceWorker' in navigator) {
         };
       })
       .catch((err) => {
-        console.warn('[PWA] Service Worker registration skipped:', err);
+        swRegisterError = (err && err.message) ? err.message : String(err);
+        console.warn('[PWA] Service Worker registration failed:', err);
+        refreshInstallBtn();
       });
   });
+} else {
+  swRegisterError = null;
+}
+
+// Hiện nút ngay lập tức, không chờ beforeinstallprompt.
+// Khi môi trường vẫn còn hợp lệ, chờ một nhịp ngắn cho Chrome bắn sự kiện
+// trước khi chuyển nút sang trạng thái mờ, tránh nhấp nháy vô cớ.
+if (installPwaBtn && !isStandaloneApp) {
+  installPwaBtn.classList.remove("pwa-hidden");
+}
+if (window.isSecureContext && "serviceWorker" in navigator) {
+  setTimeout(() => {
+    if (!deferredPrompt) refreshInstallBtn();
+  }, 3000);
+} else {
+  refreshInstallBtn();
 }
 

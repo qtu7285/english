@@ -120,6 +120,22 @@ body {
   font-weight: 600;
 }
 
+/* Nút cài PWA: mặc định ẩn, app.js quyết định trạng thái ngay khi tải xong */
+.pwa-btn {
+  color: var(--primary);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.pwa-btn.pwa-hidden {
+  display: none;
+}
+
+/* Chưa đủ điều kiện cài tự động: vẫn hiện nút nhưng làm mờ để phân biệt */
+.pwa-btn.pwa-blocked {
+  color: var(--text-muted);
+  border-color: var(--border-color);
+}
+
 /* Chat Viewport */
 .chat-viewport {
   flex: 1;

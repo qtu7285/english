@@ -313,7 +313,31 @@ func main() {
 	hostFlag := flag.String("host", "0.0.0.0", "Host to bind on (default 0.0.0.0)")
 	vaultFlag := flag.String("vault", "", "Custom vault root path")
 	openFlag := flag.Bool("open", false, "Open browser via termux-open-url")
+	tlsFlag := flag.Bool("tls", false, "Serve over HTTPS using the local CA (required for PWA install over Tailscale/LAN)")
+	genCertFlag := flag.Bool("gen-cert", false, "Generate the local CA + server certificate, print the install guide, then exit")
+	tlsHostsFlag := flag.String("tls-hosts", "zf3", "Comma-separated hostnames to include in the certificate SAN")
+	tlsCertFlag := flag.String("tls-cert", "", "Custom server certificate path (PEM)")
+	tlsKeyFlag := flag.String("tls-key", "", "Custom server private key path (PEM)")
+	tlsForceFlag := flag.Bool("tls-force", false, "Recreate the CA as well, not only the server certificate")
 	flag.Parse()
+
+	tlsPaths := defaultTLSPaths()
+	if *tlsCertFlag != "" {
+		tlsPaths.ServerCert = *tlsCertFlag
+	}
+	if *tlsKeyFlag != "" {
+		tlsPaths.ServerKey = *tlsKeyFlag
+	}
+
+	if *genCertFlag {
+		_, dnsNames, ips, err := GenerateTLSAssets(tlsPaths, *tlsHostsFlag, *tlsForceFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[X] Không tạo được chứng chỉ: %v\n", err)
+			os.Exit(1)
+		}
+		PrintTLSSetupGuide(tlsPaths, ExportCACert(tlsPaths), dnsNames, ips, *portFlag)
+		return
+	}
 
 	// Locate repo root and web dir
 	exePath, _ := os.Executable()
@@ -365,13 +389,40 @@ func main() {
 	tsIP := getTailscaleIP()
 	addr := fmt.Sprintf("%s:%d", app.Host, app.Port)
 
+	// Chế độ HTTPS: tự cấp chứng chỉ khi còn thiếu để lần chạy đầu không bị chặn.
+	scheme := "http"
+	if *tlsFlag {
+		scheme = "https"
+		if !fileExists(tlsPaths.ServerCert) || !fileExists(tlsPaths.ServerKey) {
+			caCreated, dnsNames, ips, err := GenerateTLSAssets(tlsPaths, *tlsHostsFlag, false)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "[X] Không tạo được chứng chỉ: %v\n", err)
+				os.Exit(1)
+			}
+			if caCreated {
+				PrintTLSSetupGuide(tlsPaths, ExportCACert(tlsPaths), dnsNames, ips, app.Port)
+			}
+		}
+	}
+
+	primaryHost := "localhost"
+	tailscaleName := strings.TrimSpace(strings.Split(*tlsHostsFlag, ",")[0])
+	if tailscaleName == "" {
+		tailscaleName = "zf3"
+	}
+
 	fmt.Printf("\n=======================================================\n")
 	fmt.Printf("  English Tutor Web App (Golang Engine)\n")
 	fmt.Printf("=======================================================\n")
-	fmt.Printf("[OK] Cục bộ (trên máy này):     http://localhost:%d\n", app.Port)
-	fmt.Printf("[OK] Qua Tailscale (tên máy):   http://zf3:%d\n", app.Port)
+	fmt.Printf("[OK] Cục bộ (trên máy này):     %s://%s:%d\n", scheme, primaryHost, app.Port)
+	fmt.Printf("[OK] Qua Tailscale (tên máy):   %s://%s:%d\n", scheme, tailscaleName, app.Port)
 	if tsIP != "" {
-		fmt.Printf("[OK] Qua Tailscale (địa chỉ IP): http://%s:%d\n", tsIP, app.Port)
+		fmt.Printf("[OK] Qua Tailscale (địa chỉ IP): %s://%s:%d\n", scheme, tsIP, app.Port)
+	}
+	if *tlsFlag {
+		fmt.Printf("[*] HTTPS bật - cài PWA được trên mọi thiết bị đã cài CA: %s\n", tlsPaths.CACert)
+	} else {
+		fmt.Printf("[~] HTTPS tắt - chỉ cài PWA được qua localhost. Thêm --tls để bật.\n")
 	}
 	fmt.Printf("[*] Thư mục Vault: %s\n", app.Vault.RootDir)
 	fmt.Printf("[*] Thư mục Web UI: %s\n", app.WebDir)
@@ -380,7 +431,7 @@ func main() {
 	if *openFlag {
 		go func() {
 			time.Sleep(300 * time.Millisecond)
-			exec.Command("termux-open-url", "http://localhost:"+strconv.Itoa(app.Port)).Start()
+			exec.Command("termux-open-url", scheme+"://"+primaryHost+":"+strconv.Itoa(app.Port)).Start()
 			fmt.Println("[OK] Đã mở trình duyệt Termux.")
 		}()
 	}
@@ -392,7 +443,13 @@ func main() {
 		WriteTimeout: 60 * time.Second,
 	}
 
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		fmt.Fprintf(os.Stderr, "[X] Lỗi khởi động server: %v\n", err)
+	var serveErr error
+	if *tlsFlag {
+		serveErr = server.ListenAndServeTLS(tlsPaths.ServerCert, tlsPaths.ServerKey)
+	} else {
+		serveErr = server.ListenAndServe()
+	}
+	if serveErr != nil && serveErr != http.ErrServerClosed {
+		fmt.Fprintf(os.Stderr, "[X] Lỗi khởi động server: %v\n", serveErr)
 	}
 }
