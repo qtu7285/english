@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.obsidian/
+*-cache.json
+quiz_state.json
+working_dirs.json
+path_aliases.json
