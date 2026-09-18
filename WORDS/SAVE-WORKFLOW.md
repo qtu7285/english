@@ -43,7 +43,7 @@ Build the preview entirely from current temporary session state.
 Default compact shape:
 
 ```text
-💾 Checkpoint — <target or session>
+[SAVE] Checkpoint — <target or session>
 
 Shared:
 - +<n> phrases
@@ -58,7 +58,7 @@ Một số nội dung:
 - <representative item>
 - <representative item>
 
-👉 Bạn có muốn lưu tiến trình này không?
+[CONFIRM] Bạn có muốn lưu tiến trình này không?
 ```
 
 Show only meaningful counts and a few representative items. Omit empty blocks. Do not dump internal temporary objects, IDs, foreign keys, or implementation details.
@@ -111,6 +111,20 @@ For confirmed useful new shared material such as forms, meanings, phrases, examp
 A valid active username is required for shared-content changes because shared row audit metadata records the responsible user.
 
 If a generated test used during the session was not previously in canonical TESTS, create/resolve its shared content chain before writing a learner HISTORY event that references it.
+
+### 6.1 Missing content is part of an authorized save
+
+An explicit save (`.s` or equivalent approval) also authorizes adding the useful missing FORMS → MEANINGS → PHRASES → EXAMPLES → TESTS dependencies of completed questions. Do this automatically, then save HISTORY; do not stop or request another confirmation merely because a provisional question has no canonical ID. Reuse equivalent existing rows and preserve the exact question, answer, and attempt path that actually occurred. Never invent completed attempts or rewrite historical content to fit the current rules.
+
+Only a real blocker (unreadable required rules, ambiguous identity, invalid/conflicting data, or a failed write) can prevent this step. Identify the specific blocker and keep unsaved evidence for retry. Missing generated IDs alone are not a blocker.
+
+### 6.2 Reusable save helper
+
+Prefer `TOOLS/words_save.py` for a supported single-headword save; read `TOOLS/README.md` for its JSON contract. The tutor supplies reviewed lexical content and actual completed attempts. The helper resolves temporary references, reuses matching rows, creates UUIDv7 IDs, derives result/attempt statistics, verifies relationships, and prepares all file changes before applying them.
+
+After save authorization, prepare one plan in a private temporary directory and keep that exact plan for retries. Apply it, verify the result, review the affected diff, then create the Git snapshot. The helper does not commit or push. Do not regenerate a plan to retry a partial save, because the plan carries stable HISTORY IDs. Keep it until verification and the Git snapshot succeed. A repeated `.s` after success must use session saved-state and must not create another plan for the same completed events.
+
+The helper's preparation belongs to the authorized save boundary; it does not replace the cheap checkpoint preview. For unsupported migrations or lexical ambiguity, follow AGENTS directly rather than inventing data to make the helper pass. An unrelated whole-repository check failure must be reported separately from the verified target's save result.
 
 ## 7. Learner HISTORY write
 
@@ -165,7 +179,7 @@ After successful persistence:
 - reset the unsaved completed-question counter only when the learner progress represented by that counter is successfully saved;
 - confirm briefly, for example:
 
-`✅ Đã lưu tiến trình của urge: 3 collocations + 4 câu test + 4 history events.`
+`[OK] Đã lưu tiến trình của urge: 3 collocations + 4 câu test + 4 history events.`
 
 If any part failed, state precisely what was and was not saved. Never imply success for a failed write.
 

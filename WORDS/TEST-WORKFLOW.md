@@ -132,7 +132,7 @@ When learner history is actually available, reuse learned knowledge intelligentl
 
 ## 6. Pending-answer rule
 
-While a test question is pending, recognize control commands before grading: `.s`, `.g`, `.headword`, and `#username`. Other learner messages are treated as answers.
+While a test question is pending, recognize control commands before grading: `.s`, `.g`, `.headword`, and `#username`. Explicit requests to discuss/change tutoring rules are also not answers: preserve the pending question, attempts, and round position while handling the request. Other learner messages are treated as answers.
 
 A message whose trimmed text is exactly `.g` invokes the runtime Git shortcut in `AGENTS.md`. Preserve the pending question and all test state, perform the commit/push operation, and then resume the same question. Never grade `.g`, increment attempts, change first-try status, mark the question completed, or advance the round because of this command.
 
@@ -142,16 +142,26 @@ If `.headword` or `#username` arrives while a question is pending, stop the acti
 
 ## 7. Question display
 
+Text from storage:
+
+- Display the decoded CSV field value, preserving the sentence's actual commas, quotation marks, and other punctuation. Do not show CSV wrapper quotes or doubled quotes introduced solely for storage. Use a CSV parser; do not strip quotes or replace doubled quotes globally on already-decoded text.
+- Interpret answer-list delimiters only in `correct_answer`: choose the original first alternative, then fill blanks in order. In feedback, render its fills as readable answer text, not raw `;` encoding. When showing accepted alternatives after an attempt, `|` may separate readable complete answers as in section 8.3.
+- Display only the blanked question before an attempt; do not reveal answers while formatting stored content. Clipboard delivery still uses the complete original sentence under section 9's explicit exception. Clipboard and speech receive the decoded complete sentence with its real punctuation, without labels, Markdown, CSV escaping, or answer-list separators.
+- Technical explanations about CSV may show raw encoding when the learner asks; that is separate from normal question/feedback text.
+
 Default compact format:
 
 ```text
 Câu 2/5
 
-🇬🇧 She ___ the ___ to reply immediately.
-🇻🇳 Cô ấy kiềm chế ý muốn trả lời ngay lập tức.
+[EN] She ___ the ___ to reply immediately.
+[VI] Cô ấy kiềm chế ý muốn trả lời ngay lập tức.
 ```
 
 For multiple choice or another test type, add only the minimal controls needed for that question.
+
+Difficulty and emphasis may be shown with text labels `[D1]`, `[D2]`, or `[D3]`. If the terminal supports ANSI color, these labels and blank markers may receive a subtle color; preserve the text labels as the accessible fallback, and never use color to reveal an answer.
+Use blue (prefer bright blue/cyan where needed) for `[EN]` and red for `[VI]`; retain the labels as the non-color fallback.
 
 Do not add filler or preview future questions.
 
@@ -161,7 +171,7 @@ At question delivery, apply section 9's automatic clipboard behavior to the comp
 
 For every answer:
 
-1. grade as fully correct, partial, or incorrect;
+1. grade as fully correct, partial, or incorrect, applying section 8.3 to valid alternatives;
 2. show the complete correct answer;
 3. for partial/incorrect, explain only the error that needs fixing;
 4. show the complete correct English sentence and natural Vietnamese meaning;
@@ -170,27 +180,27 @@ For every answer:
 
 Multiple blanks:
 
-- all correct → `✅`;
-- partially correct → `🟡`;
-- main target wrong → `❌`.
+- all correct → `[OK]`;
+- partially correct → `[~]`;
+- main target wrong → `[X]`.
 
-For `🟡` or `❌`, end with:
+For `[~]` or `[X]`, end with:
 
-`👉 Mời bạn nhập lại đáp án đúng.`
+`[RETRY] Mời bạn nhập lại đáp án đúng.`
 
 Do not advance until the learner re-enters the answer fully correctly.
 
-A question counts as completed only after it is fully correct. Multiple attempts still count as one completed question.
+A question counts as completed only after the learner supplies the original target answer (allow harmless capitalization, whitespace, and punctuation differences, or a complete sentence containing the expected fills). A valid alternative alone does not finish the question. Multiple attempts still count as one completed question.
 
 ### 8.1 Fully correct
 
 ```text
-✅ Đúng!
+[OK] Đúng!
 
 <correct answer>
 
-🇬🇧 <complete correct sentence>
-🇻🇳 <Vietnamese meaning>
+[EN] <complete correct sentence>
+[VI] <Vietnamese meaning>
 
 <copy outputs when supported>
 <pronunciation output(s)>
@@ -199,22 +209,33 @@ A question counts as completed only after it is fully correct. Multiple attempts
 ### 8.2 Partial / incorrect
 
 ```text
-🟡 Gần đúng
+[~] Gần đúng
 # or
-❌ Chưa đúng
+[X] Chưa đúng
 
 Đáp án đúng: <correct answer>
 Lỗi: <brief correction>
 
-🇬🇧 <complete correct sentence>
-🇻🇳 <Vietnamese meaning>
+[EN] <complete correct sentence>
+[VI] <Vietnamese meaning>
 
 <pronunciation output(s)>
 
-👉 Mời bạn nhập lại đáp án đúng.
+[RETRY] Mời bạn nhập lại đáp án đúng.
 ```
 
 The automatic clipboard preference in section 9 also applies to the correct sentence in correction feedback; re-entry is still required before the question counts as completed.
+
+### 8.3 Valid alternatives and original-answer recall
+
+- Keep the original answer fixed at question delivery. For an existing answer list, its first alternative is the original; never replace/reorder it to match the learner's response.
+- Evaluate an unexpected answer in the completed sentence: grammar, natural usage, meaning, and the supplied context must support it. A defensible nuance shift may be accepted with a brief Vietnamese explanation. Mere similarity, wrong inflection, an unnatural collocation, or a contradictory meaning is not a valid alternative and must not enter the correct-answer list. If uncertain, leave the candidate unaccepted and explain the uncertainty.
+- When a different answer is valid, acknowledge it without calling it wrong. Append the complete answer alternative once to the temporary correct-answer list, separated by `|`, with the original first. Display readable phrases, for example `chief concern | chief priority`; CSV encoding is defined in AGENTS. Do not expose the list at pre-answer question delivery.
+- Show `[~] Cách này dùng được; hãy luyện lại đáp án gốc.` Explain any useful nuance, show the original answer and its complete English sentence/Vietnamese meaning, and copy that original sentence. End with `[RETRY] Mời bạn nhập lại đáp án gốc: <original answer>.`
+- Keep the same question pending until the original is re-entered. This applies even if the alternative was already in the list or the learner repeats it. Do not advance, count a completion, or trigger completion speech yet. After the original is supplied, use the usual `[OK]` feedback and speak its complete sentence once.
+- Record a valid-alternative attempt as `partial` for target recall, with a note explicitly saying it was linguistically valid and original-answer re-entry was required. Preserve the actual answer path. With no incorrect attempt, eventual completion is `partial_corrected`, `first_try = FALSE`; a fully incorrect attempt takes precedence as usual. Do not describe this path as a language error in learner-facing summaries.
+- Accepted alternatives remain temporary shared material until authorized SAVE; discovering one does not authorize a CSV write. At save, preserve the original sentence/phrase relationship and historical immutability according to AGENTS.
+- Apply this rule to subsequent grading; do not silently reopen completed questions, invent re-entry attempts, or alter saved history when the rule changes mid-round.
 
 ## 9. Pronunciation and copy capability
 
@@ -223,18 +244,18 @@ Use platform capability rather than platform brand.
 Automatic read-aloud after a fully correct answer:
 
 - The learner explicitly requests immediate spoken playback after grading an answer fully correct. Apply this both to a correct first attempt and to a fully correct re-entry after correction, without asking again.
-- Show `✅ Đúng!` and the complete correct sentence, then invoke speech in the same grading turn, before presenting another question. If a tool call must precede the final response, show that feedback in commentary immediately before the call.
+- Show `[OK] Đúng!` and the complete correct sentence, then invoke speech in the same grading turn, before presenting another question. If a tool call must precede the final response, show that feedback in commentary immediately before the call.
 - Speak the complete correct English sentence once per question completion, including all filled blanks; exclude grading labels, Vietnamese translations, explanations, and separate answer fragments. Do not automatically repeat playback when merely summarizing an already completed question.
 - On this Termux device, use the tested native capability `termux-tts-speak -l en -n US -r 0.9 -s MUSIC`, feeding the exact sentence through safely quoted standard input. For example: `printf '%s' 'She urged me to apply for the job.' | termux-tts-speak -l en -n US -r 0.9 -s MUSIC`. Treat sentence text strictly as data, never as shell code.
-- Automatic spoken playback is triggered by fully correct completion, not by the pre-answer clipboard write or partial/incorrect feedback. For partial/incorrect feedback, offer pronunciation through an available control or link; speak directly if the learner explicitly asks, and automatically once their re-entry is fully correct.
+- Automatic spoken playback is triggered by fully correct completion, not by the pre-answer clipboard write or partial/incorrect feedback. For partial/incorrect feedback, the copied correct sentence is sufficient; do not automatically add a pronunciation link. Speak directly if the learner explicitly asks, and automatically once their re-entry is fully correct.
 - Wait for the speech command result before reporting that the playback command succeeded. Do not infer that the learner heard it solely from the exit code. If native speech is unavailable or fails, briefly report that and use the pronunciation fallback below; do not block grading or ask the learner to repeat a correct answer.
 - Preserve automatic clipboard behavior independently. Speech does not change grading/history or trigger a local progress save. Stop automatic speech if the learner asks.
 
 Pronunciation fallback:
 
 1. native pronunciation/audio capability when available;
-2. otherwise a real Google Translate URL for the exact correct English target using `https://translate.google.com/?sl=en&tl=vi&text=<URL_ENCODED_TEXT>&op=translate`;
-3. otherwise state that playback is unavailable; never invent audio or fake controls.
+2. otherwise briefly state that playback is unavailable and retain the automatic clipboard behavior; never invent audio or fake controls;
+3. show a real Google Translate URL for the exact correct English target only when explicitly requested, using `https://translate.google.com/?sl=en&tl=vi&text=<URL_ENCODED_TEXT>&op=translate`. Do not automatically display this link, even if clipboard or speech fails.
 
 When both the target answer and complete sentence require pronunciation, provide separate outputs when the platform supports them.
 
@@ -259,6 +280,7 @@ Track at least the factual information required to save later:
 - source mode (`canonical`, `hybrid`, or `cold_provisional`);
 - selected existing `test_id`, or a temporary reference for a newly generated unsaved test;
 - learner answer path;
+- original target answer, ordered accepted alternatives, and any pending original-answer re-entry;
 - final result class;
 - attempts;
 - first-try status;
@@ -288,7 +310,7 @@ Track fully completed questions since the last successful save.
 
 After 5 unsaved completed questions, remind between questions only:
 
-`💾 Bạn đã có 5 câu test chưa lưu. Nhập `.s` để lưu ngay phần đã hoàn thành.`
+`[SAVE] Bạn đã có 5 câu test chưa lưu. Nhập `.s` để lưu ngay phần đã hoàn thành.`
 
 If the learner continues, continue normally. Remind again at reasonable 5-question milestones (10, 15, ...). Reset only after a confirmed successful save.
 

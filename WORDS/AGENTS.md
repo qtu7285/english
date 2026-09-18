@@ -64,6 +64,15 @@ English/
 
 All persisted vocabulary data is local, UTF-8, comma-delimited CSV with a header row. CSV has no tabs, formulas, validation, or visual formatting. A shared headword bundle uses `<headword>.csv` for `FORMS` and companion files named `<headword>-MEANINGS.csv`, `<headword>-PHRASES.csv`, `<headword>-EXAMPLES.csv`, and `<headword>-TESTS.csv`. A learner bundle uses `<headword>-<username>.csv` for `HISTORY` and `<headword>-<username>-STATISTICS.csv` for `STATISTICS`. A workflow must read and write only the rows and columns required for its operation.
 
+
+CSV text round-trip rules:
+
+- Use a real CSV reader/writer (for example Python `csv.DictReader` / `csv.DictWriter` with UTF-8 and `newline=""`). Never parse records with `split(",")` or `splitlines()`, or construct rows by joining raw values with commas.
+- The CSV delimiter is `,` and the quote character is `"`. The writer quotes fields containing commas, double quotes, or line breaks, and doubles embedded quotes. The reader restores the original field text. Do not manually pre-escape values before passing them to the writer, or unescape them again after reading.
+- Preserve original punctuation, quotations, Unicode, and embedded line breaks. CSV wrapper quotes and doubled escape quotes are storage syntax, not learner-facing text. Literal repeated quotes in the decoded text must not be removed by a global replacement.
+- Decode CSV first; only then interpret `|` alternatives and `;` blank separators inside `TESTS.correct_answer`. Never apply those splits to sentence, question, translation, or other free-text fields. CSV quoting does not escape the separate answer-list syntax.
+- At an authorized content write, verify that reading the affected fields back yields the exact intended text, including commas and quotes. Tutoring display, clipboard, and speech use that decoded text as specified in TEST-WORKFLOW section 7.
+
 Each headword is a folder, not a standalone file.
 
 Path:
@@ -391,6 +400,14 @@ Rules:
 - The pair `phrase_id + example_id` identifies the learning content context, but does not replace `TESTS.id`.
 - `status` uses canonical values `active` or `archived`; archived tests remain addressable for historical foreign keys but are not selected for new normal practice unless a strategy explicitly permits it.
 
+`correct_answer` encoding:
+
+- Store ordered complete answer alternatives separated by `|`; the first is the original target answer, and later entries are verified acceptable alternatives. A single answer needs no `|`.
+- For `fb`, use `;` between the fills within each alternative, in blank order: `chief; concern | chief; priority`. Never use `|` to separate individual blanks or generate cross-products of unrelated alternatives. Each alternative must supply the same number of non-empty fills as the question has blanks.
+- Trim surrounding delimiter whitespace and deduplicate equivalent alternatives while preserving the original first. Do not store empty alternatives. For other test types, each `|` entry is one complete answer in that type's normal format.
+- The first alternative reconstructs the linked EXAMPLES sentence; later alternatives need not equal that sentence, but the tutor must verify their language/context before persistence. They do not repoint `phrase_id` or `example_id`. Original-target recall and alternative feedback follow TEST-WORKFLOW section 8.3.
+- Adding alternatives is a semantic TESTS change, subject to section 3.8: retain historically referenced rows unchanged and create a replacement with a new ID when needed. Preserve old HISTORY references. The append-only save helper may create a replacement; archive the old test through the authorized workflow before future selection.
+
 Example:
 
 ```text
@@ -580,9 +597,10 @@ Rules:
 - `test_id` references the shared headword CSV bundle's `TESTS.id`.
 - No `learner`, `username`, or `created_by` column is needed because the entire file belongs to one canonical username.
 - HISTORY is append-only after a saved event is finalized; do not add `updated_at`/`updated_by` to normal history rows.
-- `result` is machine-facing and uses exactly one of `correct`, `partial_corrected`, or `incorrect_corrected`; tutoring emoji such as `✅`, `🟡`, `❌`, or arrow strings are presentation only and must not be stored in new canonical HISTORY rows.
+- `result` is machine-facing and uses exactly one of `correct`, `partial_corrected`, or `incorrect_corrected`; tutoring status symbols such as `[OK]`, `[~]`, `[X]`, or `[RETRY]` are presentation only and must not be stored in new canonical HISTORY rows.
 - `correct` = the question was fully correct on the first evaluated attempt; `partial_corrected` = it was initially partial and later finalized fully correct without a fully incorrect attempt; `incorrect_corrected` = at least one fully incorrect attempt occurred before final correction. If both partial and incorrect attempts occurred, use `incorrect_corrected`.
 - All three canonical `result` values represent one finalized fully-correct question completion for strategy counting; `first_try` and `attempts` preserve the quality/effort distinction. Normally `correct` has `first_try = TRUE`, while the two corrected values have `first_try = FALSE`.
+- A linguistically valid alternative requiring original-answer re-entry is partial target recall under TEST-WORKFLOW 8.3. Store `partial_corrected` after the original is supplied (unless an incorrect attempt occurred), and explain the valid alternative plus recall requirement in `mistake_note`; do not invent a language error. Existing finalized HISTORY remains unchanged when this policy is introduced.
 - Store attempts, mistakes, and session grouping here.
 - `HISTORY.id` is also the idempotency key for saves: retrying a partial/multi-file checkpoint must not append another row with the same `id`.
 - One runtime multi-headword session may reuse the same canonical `session_id` across different `<headword>-<username>` learner CSVs; `session_id` is a grouping key, not a per-file unique key.
@@ -594,9 +612,9 @@ Rules:
 When a legacy finalized HISTORY row uses display-oriented result text, migrate without changing the event ID, answer, attempts, `first_try`, mistake note, timestamp, test reference, or session grouping:
 
 ```text
-✅      → correct
-🟡→✅   → partial_corrected
-❌→✅   → incorrect_corrected
+[OK]    → correct
+[~]→[OK] → partial_corrected
+[X]→[OK] → incorrect_corrected
 ```
 
 If a legacy row represents a non-final attempt or its path cannot be inferred safely, preserve it for review rather than guessing.
