@@ -9,6 +9,7 @@ BIN_PATH="$HOME/.local/bin/english-server"
 PORT=5000
 USE_TLS=0
 GEN_CERT=0
+EXPORT_CA=0
 TLS_HOSTS="${ENGLISH_TLS_HOSTS:-zf3}"
 
 # Nhận tham số theo thứ tự tự do: số cổng, tls, gen-cert
@@ -19,6 +20,9 @@ for arg in "$@"; do
             ;;
         gen-cert|--gen-cert)
             GEN_CERT=1
+            ;;
+        export-ca|--export-ca)
+            EXPORT_CA=1
             ;;
         ''|*[!0-9]*)
             echo "[X] Tham số không hợp lệ: $arg (dùng: bash app/run.sh [PORT] [tls|gen-cert])" >&2
@@ -56,6 +60,11 @@ if [ "$needs_build" -eq 1 ]; then
     mkdir -p "$(dirname "$BIN_PATH")"
     go build -o "$BIN_PATH" "$SCRIPT_DIR"/api/*.go
     chmod +x "$BIN_PATH"
+fi
+
+if [ "$EXPORT_CA" -eq 1 ]; then
+    "$BIN_PATH" --export-ca --tls-hosts "$TLS_HOSTS" --port "$PORT"
+    exit 0
 fi
 
 if [ "$GEN_CERT" -eq 1 ]; then

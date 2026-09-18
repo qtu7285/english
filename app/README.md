@@ -86,11 +86,21 @@ bash app/run.sh 8080 tls      # cổng khác
 ENGLISH_TLS_HOSTS=zf3,laptop bash app/run.sh gen-cert
 ```
 
+Chép CA sang máy khác - chỉ cần `ca.crt`, tuyệt đối không chép `ca.key`:
+
+```bash
+bash app/run.sh export-ca      # sao lại /sdcard/Download/english-ca.crt
+```
+
+Hoặc trên máy cần cài, tải thẳng từ server: `https://zf3:5000/ca.crt`
+
 Ghi chú:
 * Khoá và chứng chỉ nằm ở `~/.local/share/english-tls/`, **ngoài repo**, nên
   không bao giờ bị commit lên Git. Đổi chỗ bằng biến `ENGLISH_TLS_DIR`.
-* File CA được sao ra `/sdcard/Download/english-ca.crt` để trình cài chứng chỉ
-  của Android đọc được.
+* Chỉ `ca.crt` được sao ra `/sdcard/Download/english-ca.crt`. Các file `.key`
+  cố ý ở lại thư mục gốc: Download bị mọi ứng dụng có quyền storage đọc được và
+  sdcard không giữ được quyền `0600`, nên lộ `ca.key` là lộ quyền ký chứng chỉ
+  được mọi thiết bị của bạn tin.
 * Android bắt buộc máy có khoá màn hình (PIN/mật khẩu) mới cho cài CA, và sẽ
   hiện cảnh báo "mạng có thể bị theo dõi" - đây là hệ quả bình thường.
 * Khi IP Tailscale hoặc IP LAN đổi, chạy lại `gen-cert`: chỉ chứng chỉ server

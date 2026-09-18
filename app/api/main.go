@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -77,6 +78,104 @@ type ServerApp struct {
 	WebDir  string
 	Port    int
 	Host    string
+}
+
+// LiveReloader theo dõi thay đổi trong thư mục webDir và bắn tín hiệu SSE cho trình duyệt
+type LiveReloader struct {
+	webDir    string
+	clients   map[chan struct{}]bool
+	clientsMu sync.Mutex
+}
+
+func NewLiveReloader(webDir string) *LiveReloader {
+	lr := &LiveReloader{
+		webDir:  webDir,
+		clients: make(map[chan struct{}]bool),
+	}
+	lr.startWatcher()
+	return lr
+}
+
+func (lr *LiveReloader) startWatcher() {
+	var lastMod time.Time
+	filepath.Walk(lr.webDir, func(path string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() {
+			if info.ModTime().After(lastMod) {
+				lastMod = info.ModTime()
+			}
+		}
+		return nil
+	})
+
+	go func() {
+		ticker := time.NewTicker(600 * time.Millisecond)
+		defer ticker.Stop()
+		for range ticker.C {
+			var maxMod time.Time
+			filepath.Walk(lr.webDir, func(path string, info os.FileInfo, err error) error {
+				if err == nil && !info.IsDir() {
+					if info.ModTime().After(maxMod) {
+						maxMod = info.ModTime()
+					}
+				}
+				return nil
+			})
+
+			if maxMod.After(lastMod) {
+				lastMod = maxMod
+				lr.broadcast()
+			}
+		}
+	}()
+}
+
+func (lr *LiveReloader) broadcast() {
+	lr.clientsMu.Lock()
+	defer lr.clientsMu.Unlock()
+	for ch := range lr.clients {
+		select {
+		case ch <- struct{}{}:
+		default:
+		}
+	}
+}
+
+func (lr *LiveReloader) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+
+	ch := make(chan struct{}, 1)
+	lr.clientsMu.Lock()
+	lr.clients[ch] = true
+	lr.clientsMu.Unlock()
+
+	defer func() {
+		lr.clientsMu.Lock()
+		delete(lr.clients, ch)
+		lr.clientsMu.Unlock()
+	}()
+
+	fmt.Fprintf(w, "data: connected\n\n")
+	flusher.Flush()
+
+	ctx := r.Context()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ch:
+			fmt.Fprintf(w, "data: reload\n\n")
+			flusher.Flush()
+		}
+	}
 }
 
 func sendJSON(w http.ResponseWriter, status int, data interface{}) {
@@ -319,6 +418,7 @@ func main() {
 	tlsCertFlag := flag.String("tls-cert", "", "Custom server certificate path (PEM)")
 	tlsKeyFlag := flag.String("tls-key", "", "Custom server private key path (PEM)")
 	tlsForceFlag := flag.Bool("tls-force", false, "Recreate the CA as well, not only the server certificate")
+	exportCAFlag := flag.Bool("export-ca", false, "Copy the existing CA certificate to the Download folder, then exit")
 	flag.Parse()
 
 	tlsPaths := defaultTLSPaths()
@@ -327,6 +427,22 @@ func main() {
 	}
 	if *tlsKeyFlag != "" {
 		tlsPaths.ServerKey = *tlsKeyFlag
+	}
+
+	if *exportCAFlag {
+		if !fileExists(tlsPaths.CACert) {
+			fmt.Fprintf(os.Stderr, "[X] Chưa có CA tại %s. Chạy trước: bash app/run.sh gen-cert\n", tlsPaths.CACert)
+			os.Exit(1)
+		}
+		dest := ExportCACert(tlsPaths)
+		if dest == "" {
+			fmt.Fprintf(os.Stderr, "[X] Không ghi được vào thư mục Download. Chạy termux-setup-storage rồi thử lại.\n")
+			os.Exit(1)
+		}
+		fmt.Printf("[OK] Đã chép CA ra: %s\n", dest)
+		fmt.Printf("[*] Máy khác tải trực tiếp tại: https://%s:%d/ca.crt\n",
+			strings.TrimSpace(strings.Split(*tlsHostsFlag, ",")[0]), *portFlag)
+		return
 	}
 
 	if *genCertFlag {
@@ -365,6 +481,10 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// Live Reloader cho moi truong phat trien (SSE tu dong reload khi sua file web)
+	reloader := NewLiveReloader(webDir)
+	mux.Handle("/api/live-reload", reloader)
+
 	// API Handlers
 	mux.HandleFunc("/api/status", app.handleStatus)
 	mux.HandleFunc("/api/vault/list", app.handleVaultList)
@@ -372,6 +492,18 @@ func main() {
 	mux.HandleFunc("/api/vault/write", app.handleVaultWrite)
 	mux.HandleFunc("/api/vault/search", app.handleVaultSearch)
 	mux.HandleFunc("/api/chat", app.handleChat)
+
+	// Cho thiết bị khác trong tailnet tải CA về cài, khỏi phải copy file thủ công.
+	mux.HandleFunc("/ca.crt", func(w http.ResponseWriter, r *http.Request) {
+		data, err := os.ReadFile(tlsPaths.CACert)
+		if err != nil {
+			http.Error(w, "Chua tao CA. Chay: bash app/run.sh gen-cert", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/x-x509-ca-cert")
+		w.Header().Set("Content-Disposition", `attachment; filename="english-ca.crt"`)
+		w.Write(data)
+	})
 
 	// Static Web Server
 	fileServer := http.FileServer(http.Dir(webDir))

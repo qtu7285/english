@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
   <title>English Tutor & Vault AI</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0b0f19">
@@ -102,7 +102,7 @@
       <form class="input-form" id="chatForm">
         <textarea
           id="messageInput"
-          placeholder="Nhập từ vựng, câu tiếng Anh, hoặc số câu để luyện..."
+          placeholder="Nhập từ cần học..."
           rows="1"
           required
         ></textarea>
@@ -180,7 +180,7 @@
             <input type="text" id="vaultSearchInput" placeholder="Tìm kiếm từ vựng hoặc ghi chú trong vault...">
             <button class="btn btn-secondary" id="refreshVaultBtn">Làm mới</button>
           </div>
-          <div class="vault-layout">
+          <div class="vault-layout" id="vaultLayout">
             <div class="vault-file-list" id="vaultFileList">
               <div class="loading-state">Đang tải danh sách file...</div>
             </div>
@@ -190,6 +190,7 @@
           </div>
         </div>
         <div class="modal-footer">
+          <button class="btn btn-secondary" id="vaultBackBtn" style="display: none; margin-right: auto;">← Danh sách</button>
           <button class="btn btn-secondary" id="insertToChatBtn" disabled>Thêm nội dung vào chat</button>
         </div>
       </div>

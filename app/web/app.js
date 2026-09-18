@@ -47,10 +47,32 @@ const vaultBtn = document.getElementById("vaultBtn");
 const vaultModal = document.getElementById("vaultModal");
 const closeVaultBtn = document.getElementById("closeVaultBtn");
 const vaultSearchInput = document.getElementById("vaultSearchInput");
-const refreshVaultBtn = document.getElementById("refreshVaultBtn");
+const vaultLayout = document.getElementById("vaultLayout");
 const vaultFileList = document.getElementById("vaultFileList");
 const vaultPreview = document.getElementById("vaultPreview");
+const vaultBackBtn = document.getElementById("vaultBackBtn");
 const insertToChatBtn = document.getElementById("insertToChatBtn");
+
+// Haptic feedback helper for mobile touch
+function triggerHaptic(ms = 25) {
+  if (navigator && typeof navigator.vibrate === "function") {
+    try { navigator.vibrate(ms); } catch (e) {}
+  }
+}
+
+// English TTS Voice caching for mobile browsers
+let cachedEnVoice = null;
+function refreshEnglishVoice() {
+  if (!("speechSynthesis" in window)) return;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices || voices.length === 0) return;
+  cachedEnVoice = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural") || v.default)) ||
+                  voices.find(v => v.lang.startsWith("en")) || null;
+}
+if ("speechSynthesis" in window) {
+  refreshEnglishVoice();
+  window.speechSynthesis.onvoiceschanged = refreshEnglishVoice;
+}
 
 function stripHtmlAndEntities(str) {
   if (!str) return "";
@@ -363,9 +385,15 @@ function speakText(explicitText) {
     utterance.rate = state.ttsRate || 0.9;
 
     // Pick English voice
-    const voices = window.speechSynthesis.getVoices();
-    const enVoice = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural") || v.default));
-    if (enVoice) utterance.voice = enVoice;
+    if (!cachedEnVoice) refreshEnglishVoice();
+    if (cachedEnVoice) {
+      utterance.voice = cachedEnVoice;
+    } else {
+      const voices = window.speechSynthesis.getVoices();
+      const enVoice = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Natural") || v.default)) ||
+                      voices.find(v => v.lang.startsWith("en"));
+      if (enVoice) utterance.voice = enVoice;
+    }
 
     window.speechSynthesis.speak(utterance);
   }, 50);
@@ -409,6 +437,11 @@ async function copyToClipboard(text, btnElement) {
     } catch (err) {
       copied = false;
     }
+  }
+
+  // Haptic feedback on copy
+  if (copied) {
+    triggerHaptic(35);
   }
 
   // UI feedback if triggered by a button click
@@ -458,6 +491,7 @@ function appendMessage(role, text, toolLogs = []) {
         choiceBtn.className = "btn-bubble-choice";
         choiceBtn.innerHTML = `<span class="choice-badge">${escapeHtml(c.key)}</span><span class="choice-text">${escapeHtml(c.text)}</span>`;
         choiceBtn.onclick = () => {
+          triggerHaptic(20);
           choiceGroup.querySelectorAll(".btn-bubble-choice").forEach(b => {
             b.disabled = true;
             b.classList.remove("selected");
@@ -605,10 +639,30 @@ function createLoadingIndicator() {
   };
 }
 
+// Check if last message was an active test question waiting for an answer
+function isQuestionPending() {
+  if (!state.conversation || state.conversation.length === 0) return false;
+  const lastAssistant = [...state.conversation].reverse().find(m => m.role === "assistant");
+  if (!lastAssistant || !lastAssistant.text) return false;
+  const txt = lastAssistant.text;
+  return /Câu\s+\d+\/\d+|\[D[1-3]\]|_{2,}/i.test(txt) && !/Hoàn thành \d+\/\d+ câu/i.test(txt);
+}
+
 // Send Message Handler
 async function handleSendMessage(msgText) {
-  const text = (msgText || messageInput.value).trim();
+  let text = (msgText || messageInput.value).trim();
   if (!text) return;
+
+  // Tu dong them dau '.' khi nguoi hoc nhap mot tu don de hoc (vi du: 'urge' -> '.urge')
+  // Khong them dau '.' neu la lenh (.s, .g, .help, #qtu), so cau (3, 5), dap an trac nghiem (A, B, C, D),
+  // hoac khi he thong dang cho tra loi mot cau hoi luyen tap.
+  const isCommandOrNumber = /^[.#]/.test(text) || /^\d+$/.test(text);
+  const isChoiceOption = /^[a-dA-D]$/.test(text) && document.querySelectorAll(".btn-bubble-choice").length > 0;
+  const isSingleWord = /^[A-Za-z]{2,30}$/.test(text);
+
+  if (!isCommandOrNumber && !isChoiceOption && isSingleWord && !isQuestionPending()) {
+    text = "." + text.toLowerCase();
+  }
 
   messageInput.value = "";
   messageInput.style.height = "auto";
@@ -662,8 +716,14 @@ async function handleSendMessage(msgText) {
   }
 }
 
+function resetVaultMobileView() {
+  if (vaultLayout) vaultLayout.classList.remove("show-preview");
+  if (vaultBackBtn) vaultBackBtn.style.display = "none";
+}
+
 // Vault Explorer
 async function loadVaultFiles(subpath = "") {
+  resetVaultMobileView();
   vaultFileList.innerHTML = '<div class="vault-loading-box"><span class="vault-spinner"></span></div>';
   try {
     const res = await fetch(`/api/vault/list?subpath=${encodeURIComponent(subpath)}`);
@@ -699,6 +759,10 @@ async function selectVaultFile(file, element) {
   state.selectedVaultFile = file;
   insertToChatBtn.disabled = false;
 
+  // Hien thi preview va nut quay lai danh sach tren giao dien mobile
+  if (vaultLayout) vaultLayout.classList.add("show-preview");
+  if (vaultBackBtn) vaultBackBtn.style.display = "inline-flex";
+
   vaultPreview.innerHTML = "Đang tải...";
   try {
     const res = await fetch(`/api/vault/read?path=${encodeURIComponent(file.path)}`);
@@ -721,6 +785,8 @@ chatForm.onsubmit = (e) => {
 
 messageInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
+    // Bo qua neu nguoi hoc dang gõ bo go tieng Viet (IME Composition)
+    if (e.isComposing || e.keyCode === 229) return;
     e.preventDefault();
     handleSendMessage();
   }
@@ -832,11 +898,21 @@ ttsRate.oninput = () => {
 
 // Vault Modal Handlers
 vaultBtn.onclick = () => {
+  resetVaultMobileView();
   vaultModal.classList.remove("hidden");
   loadVaultFiles();
 };
 
-closeVaultBtn.onclick = () => vaultModal.classList.add("hidden");
+if (vaultBackBtn) {
+  vaultBackBtn.onclick = () => {
+    resetVaultMobileView();
+  };
+}
+
+closeVaultBtn.onclick = () => {
+  vaultModal.classList.add("hidden");
+  resetVaultMobileView();
+};
 refreshVaultBtn.onclick = () => loadVaultFiles();
 
 vaultSearchInput.oninput = async (e) => {
@@ -845,6 +921,7 @@ vaultSearchInput.oninput = async (e) => {
     loadVaultFiles();
     return;
   }
+  resetVaultMobileView();
   try {
     const res = await fetch(`/api/vault/search?q=${encodeURIComponent(q)}`);
     const data = await res.json();
@@ -860,6 +937,7 @@ insertToChatBtn.onclick = () => {
   if (state.selectedVaultFile && vaultPreview.innerText) {
     messageInput.value = `Hãy phân tích nội dung file ${state.selectedVaultFile.path}:\n\n` + vaultPreview.innerText.slice(0, 1000);
     vaultModal.classList.add("hidden");
+    resetVaultMobileView();
     messageInput.focus();
   }
 };
@@ -867,7 +945,10 @@ insertToChatBtn.onclick = () => {
 // Close modal on click outside
 window.onclick = (e) => {
   if (e.target === settingsModal) settingsModal.classList.add("hidden");
-  if (e.target === vaultModal) vaultModal.classList.add("hidden");
+  if (e.target === vaultModal) {
+    vaultModal.classList.add("hidden");
+    resetVaultMobileView();
+  }
 };
 
 // PWA Install Prompt Handler
@@ -904,13 +985,50 @@ function pwaBlockReason() {
     return "[X] Trình duyệt này không hỗ trợ Service Worker nên không cài được PWA. Hãy mở bằng Chrome, không dùng trình duyệt trong ứng dụng khác.";
   }
   if (swRegisterError) {
+    // Lỗi cert nghĩa là trang đã được mở bằng cách bỏ qua cảnh báo bảo mật:
+    // Chrome vẫn hiện nội dung nhưng từ chối đăng ký Service Worker.
+    if (/ssl|certificate|cert/i.test(swRegisterError)) {
+      return (
+        "[X] Chrome chưa tin chứng chỉ của " + location.host + " nên chặn Service Worker.\n\n" +
+        "Chi tiết: " + swRegisterError + "\n\n" +
+        "Bạn đang xem trang này nhờ bấm 'Tiếp tục truy cập' ở cảnh báo bảo mật. Chrome không\n" +
+        "bao giờ cho cài PWA trên origin đã bỏ qua cảnh báo, kể cả khi trang hiển thị bình thường.\n\n" +
+        "Kiểm tra theo thứ tự:\n" +
+        "  1. Cài đặt -> Bảo mật -> Thông tin xác thực -> Thông tin xác thực đáng tin cậy -> tab\n" +
+        "     NGƯỜI DÙNG: phải thấy 'English Tutor Local CA'. Không thấy nghĩa là chưa cài,\n" +
+        "     hoặc đã cài nhầm vào mục 'Chứng chỉ người dùng VPN và ứng dụng'.\n" +
+        "  2. Cài đúng mục: Cài chứng chỉ -> Chứng chỉ CA -> chọn /sdcard/Download/english-ca.crt\n" +
+        "  3. Đóng hẳn Chrome (vuốt khỏi danh sách ứng dụng) rồi mở lại - trust store chỉ được\n" +
+        "     đọc lại khi Chrome khởi động.\n" +
+        "  4. Xoá quyết định bỏ qua cũ: Menu 3 chấm -> Cài đặt trang -> Xoá & đặt lại.\n" +
+        "  5. Mở lại https://" + location.host + " - không được còn cảnh báo bảo mật nào."
+      );
+    }
     return (
       "[X] Service Worker đăng ký thất bại nên Chrome coi trang là chưa cài được.\n\n" +
       "Chi tiết: " + swRegisterError + "\n\n" +
       "Hãy tải lại trang một lần rồi thử lại."
     );
   }
-  return "[~] Chưa có lời mời cài tự động. Hãy tải lại trang một lần, sau đó bấm Menu 3 chấm của Chrome -> 'Cài đặt ứng dụng' (hoặc 'Thêm vào màn hình chính').";
+  // Tới đây mọi tiêu chí kỹ thuật đều đạt: HTTPS tin cậy, Service Worker chạy.
+  // Chrome không cho biết vì sao im lặng, nên liệt kê đúng hai khả năng thật.
+  const diag = [
+    "secureContext=" + window.isSecureContext,
+    "serviceWorker=" + (navigator.serviceWorker && navigator.serviceWorker.controller ? "đang điều khiển" : "chưa điều khiển trang"),
+    "displayMode=" + (window.matchMedia("(display-mode: standalone)").matches ? "standalone" : "browser"),
+  ].join(", ");
+
+  return (
+    "[~] Trang đã đạt mọi tiêu chí cài đặt nhưng Chrome chưa gửi lời mời tự động.\n\n" +
+    "Khả năng 1 - app đã được cài rồi:\n" +
+    "  Chrome không mời cài lại. Kiểm tra màn hình chính, nếu đã có icon 'English AI'\n" +
+    "  thì mở từ icon đó là xong.\n\n" +
+    "Khả năng 2 - Chrome chưa chủ động mời:\n" +
+    "  Cài tay vẫn được và cho kết quả tương đương:\n" +
+    "  Menu 3 chấm của Chrome -> 'Cài đặt ứng dụng' (hoặc 'Thêm vào Màn hình chính').\n\n" +
+    "Nếu Service Worker vừa mới đăng ký lần đầu, tải lại trang một lần rồi thử lại.\n\n" +
+    "Trạng thái: " + diag
+  );
 }
 
 // Luôn hiện nút khi chưa cài, chỉ đổi trạng thái sáng/mờ theo mức sẵn sàng
@@ -1003,4 +1121,24 @@ if (window.isSecureContext && "serviceWorker" in navigator) {
 } else {
   refreshInstallBtn();
 }
+
+// Live-Reload via Server-Sent Events (SSE) from Golang engine
+(function initLiveReload() {
+  if (!("EventSource" in window)) return;
+  let sse = null;
+  function connect() {
+    sse = new EventSource("/api/live-reload");
+    sse.onmessage = (e) => {
+      if (e.data === "reload") {
+        console.log("[LiveReload] File thay đổi, tự động tải lại trang...");
+        location.reload();
+      }
+    };
+    sse.onerror = () => {
+      sse.close();
+      setTimeout(connect, 3000);
+    };
+  }
+  connect();
+})();
 
