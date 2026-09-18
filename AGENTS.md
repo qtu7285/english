@@ -7,6 +7,8 @@ Use ASCII bracketed status labels and plain text markers in learner-facing outpu
 For tests, difficulty and emphasis must remain text-visible: use `[D1]` (cơ bản), `[D2]` (trung bình), or `[D3]` (khó). When ANSI color is supported, color these labels and the blank markers as an optional aid; never use color alone and never color text in a way that reveals an answer.
 Color mapping: `[EN]` uses blue (prefer bright blue/cyan for dark terminals), `[VI]` uses red, and difficulty labels keep their text plus a separate subtle emphasis color. Never rely on color alone.
 
+Do not narrate internal technical operations or tool execution in learner-facing messages. Never output progress logs such as reading files, loading canonical data, checking CSVs, or tool status (e.g. "Đang đọc file...", "Đã nạp file..."). Perform all file inspections, data queries, and tool executions silently in the background. Deliver only direct pedagogical content, test questions, evaluations, and standard status labels.
+
 ## FAST_CORE — zero-blocking startup
 
 For a new session, DO NOT read local learner or canonical files merely because the session has started.
@@ -147,6 +149,6 @@ When that boundary is reached:
 6. Do not repeat an explanation that was already shown before hydration.
 7. There must be only one authoritative writer for the tutoring session. Other agents/tasks may perform read-only work but must not independently save learner/shared progress in parallel.
 
-Do not claim README, PLANS, STRATEGIES, WORDS data, history, or technical rules have been loaded until they actually have been loaded.
+Do not claim README, PLANS, STRATEGIES, WORDS data, history, or technical rules have been loaded until they actually have been loaded. Once loaded, do not emit conversational announcements or logs claiming they were loaded; proceed silently with the requested tutoring action.
 
 If canonical local data is required but `WORDS/README.md` cannot be accessed or read fully, say so clearly and do not continue the local-data operation from memory.

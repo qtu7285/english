@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>English Tutor & Vault AI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">EN</div>
+        <div class="brand-info">
+          <h1>English Tutor AI</h1>
+          <span class="status-indicator online" id="statusIndicator">Cục bộ (Termux)</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="vaultBtn" title="Quản lý Vault / File">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span class="btn-label">Vault</span>
+        </button>
+        <button class="icon-btn" id="settingsBtn" title="Cài đặt API / OAuth">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        <button class="icon-btn" id="clearBtn" title="Xóa lịch sử chat">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Chat Window -->
+    <main class="chat-viewport" id="chatViewport">
+      <div class="chat-messages" id="chatMessages">
+        <!-- Initial Welcome Message -->
+        <div class="message-row assistant">
+          <div class="avatar">AI</div>
+          <div class="bubble">
+            <div class="bubble-content">
+              <p>Xin chào! Tôi là trợ lý gia sư tiếng Anh được kết nối trực tiếp với Termux và kho tài liệu (Vault) của bạn.</p>
+              <div class="badge-list">
+                <span class="badge badge-en">[EN] Tiếng Anh</span>
+                <span class="badge badge-vi">[VI] Giải thích tự nhiên</span>
+                <span class="badge badge-tool">[VAULT] Đọc/ghi file</span>
+              </div>
+              <p>Bạn có thể:</p>
+              <ul>
+                <li>Nhập một từ (ví dụ <code>.urge</code> hoặc <code>inspire</code>) để học nghĩa, cách dùng và phát âm.</li>
+                <li>Gõ một câu tiếng Anh để kiểm tra ngữ pháp hoặc dịch nghĩa.</li>
+                <li>Yêu cầu: <em>"Đọc danh sách từ vựng trong WORDS/"</em> hoặc <em>"Tóm tắt file ghi chú trong vault"</em>.</li>
+              </ul>
+              <p class="hint-text">[NEXT] Nhập số câu để luyện (ví dụ <code>5</code>), hoặc <code>.từ_mới</code> để bắt đầu.</p>
+            </div>
+            <div class="bubble-actions">
+              <button class="btn-action speak-btn" data-text="Hello! Welcome to your English learning assistant.">🔊 Phát âm</button>
+              <button class="btn-action copy-btn" data-text="Hello! Welcome to your English learning assistant.">📋 Sao chép</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Quick Chips Bar -->
+    <div class="quick-chips">
+      <button class="chip chip-choice" data-send="A">A</button>
+      <button class="chip chip-choice" data-send="B">B</button>
+      <button class="chip chip-choice" data-send="C">C</button>
+      <button class="chip chip-choice" data-send="D">D</button>
+      <button class="chip" data-send="3">3 câu luyện</button>
+      <button class="chip" data-send="5">5 câu luyện</button>
+      <button class="chip" data-send=".help">.help</button>
+      <button class="chip" data-send=".s">.s (Lưu)</button>
+      <button class="chip" data-send=".g">.g (Git)</button>
+      <button class="chip" data-send=".urge">.urge</button>
+    </div>
+
+    <!-- Input Footer -->
+    <footer class="app-footer">
+      <form class="input-form" id="chatForm">
+        <textarea
+          id="messageInput"
+          placeholder="Nhập từ vựng, câu tiếng Anh, hoặc yêu cầu với Vault..."
+          rows="1"
+          required
+        ></textarea>
+        <button type="submit" id="sendBtn" class="send-btn" title="Gửi tin nhắn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </form>
+    </footer>
+
+    <!-- Settings Modal -->
+    <div class="modal-backdrop hidden" id="settingsModal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Cài đặt Kết nối & AI</h2>
+          <button class="close-btn" id="closeSettingsBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="tab-apikey">API Key (Khuyên dùng)</button>
+            <button class="tab-btn" data-tab="tab-oauth">Google OAuth 2.0</button>
+          </div>
+
+          <!-- API Key Tab -->
+          <div class="tab-content active" id="tab-apikey">
+            <div class="form-group">
+              <label for="apiKeyInput">Google Gemini API Key:</label>
+              <input type="password" id="apiKeyInput" placeholder="AIzaSy..." autocomplete="off">
+              <small class="form-hint">Lấy miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a>. Key được lưu an toàn trong trình duyệt của bạn.</small>
+            </div>
+          </div>
+
+          <!-- OAuth Tab -->
+          <div class="tab-content" id="tab-oauth">
+            <div class="form-group">
+              <label for="oauthClientId">OAuth Client ID:</label>
+              <input type="text" id="oauthClientId" placeholder="xxx.apps.googleusercontent.com">
+            </div>
+            <div class="form-group">
+              <label for="oauthClientSecret">OAuth Client Secret:</label>
+              <input type="password" id="oauthClientSecret" placeholder="GOCSPX-...">
+            </div>
+            <button type="button" class="btn btn-secondary" id="loginGoogleBtn">
+              Đăng nhập bằng Google
+            </button>
+            <div id="oauthStatus" class="form-hint" style="margin-top: 8px;"></div>
+          </div>
+
+          <!-- Common AI Settings -->
+          <div class="form-group" style="margin-top: 16px;">
+            <label for="modelSelect">Mô hình AI (Model):</label>
+            <select id="modelSelect">
+              <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Nhanh & Ổn định)</option>
+              <option value="gemini-2.5-pro">Gemini 2.5 Pro (Mạnh mẽ)</option>
+              <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+              <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+              <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+              <option value="custom">-- Nhập tên mô hình khác... --</option>
+            </select>
+            <input type="text" id="customModelInput" placeholder="Ví dụ: gemini-2.5-flash" style="display: none; margin-top: 8px;">
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="enableVaultToolsCheck" checked>
+              Cho phép AI đọc & ghi file trong Vault (Function Calling)
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="ttsRate">Tốc độ phát âm (TTS): <span id="ttsRateVal">0.9x</span></label>
+            <input type="range" id="ttsRate" min="0.5" max="1.5" step="0.1" value="0.9">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="saveSettingsBtn">Lưu Cài đặt</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vault Modal / File Drawer -->
+    <div class="modal-backdrop hidden" id="vaultModal">
+      <div class="modal-card modal-large">
+        <div class="modal-header">
+          <h2>Kho tài liệu & Từ vựng (Vault)</h2>
+          <button class="close-btn" id="closeVaultBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="vault-toolbar">
+            <input type="text" id="vaultSearchInput" placeholder="Tìm kiếm từ vựng hoặc ghi chú trong vault...">
+            <button class="btn btn-secondary" id="refreshVaultBtn">Làm mới</button>
+          </div>
+          <div class="vault-layout">
+            <div class="vault-file-list" id="vaultFileList">
+              <div class="loading-state">Đang tải danh sách file...</div>
+            </div>
+            <div class="vault-preview" id="vaultPreview">
+              <div class="preview-placeholder">Chọn một file để xem trước nội dung</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="insertToChatBtn" disabled>Thêm nội dung vào chat</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
