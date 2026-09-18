@@ -164,6 +164,68 @@ function extractEnglishElements(text) {
   return { word: targetWord, sentences };
 }
 
+// Extract Multiple Choice Options dynamically (A, B, C, D, E, True/False, etc.)
+function extractChoiceOptions(text) {
+  if (!text) return [];
+  const lines = text.split('\n');
+  const choices = [];
+
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/[*_`]/g, "").trim();
+
+    // Match choices: "A. xxx", "A) xxx", "- A. xxx", "* A. xxx"
+    const letterMatch = line.match(/^[-*•]?\s*([A-Fa-f])[\.\)]\s+(.+)$/);
+    if (letterMatch) {
+      const key = letterMatch[1].toUpperCase();
+      const optionText = letterMatch[2].trim();
+      if (!choices.some(c => c.key === key)) {
+        choices.push({
+          key: key,
+          text: optionText,
+          label: `${key}. ${optionText}`,
+          send: key
+        });
+      }
+      continue;
+    }
+
+    // Match True / False or Đúng / Sai
+    const tfMatch = line.match(/^[-*•]?\s*(True|False|Đúng|Sai)[\.\:]?\s*(.*)$/i);
+    if (tfMatch && !line.includes("?")) {
+      const key = tfMatch[1].trim();
+      if (!choices.some(c => c.key.toLowerCase() === key.toLowerCase())) {
+        choices.push({
+          key: key,
+          text: tfMatch[2].trim() || key,
+          label: key,
+          send: key
+        });
+      }
+    }
+  }
+
+  return choices.length >= 2 ? choices : [];
+}
+
+// Update the dynamic choice chips in the Quick Chips bar
+function updateDynamicChoices(choices) {
+  const container = document.getElementById("dynamicChoiceChips");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!choices || choices.length === 0) return;
+
+  choices.forEach(c => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chip chip-choice";
+    btn.setAttribute("data-send", c.send);
+    btn.innerText = c.key;
+    btn.title = `${c.key}: ${c.text}`;
+    container.appendChild(btn);
+  });
+}
+
 function processLineForAudio(line) {
   if (!line || line.includes("inline-audio-btn") || line.includes("<pre>") || line.includes("<code>")) return line;
 
@@ -385,6 +447,34 @@ function appendMessage(role, text, toolLogs = []) {
 
   // Bottom action bar for assistant messages: reliable, large, easy-to-tap buttons
   if (role === "assistant") {
+    // 1. Dynamic multiple-choice buttons inside the question bubble
+    const choices = extractChoiceOptions(text);
+    if (choices.length > 0) {
+      const choiceGroup = document.createElement("div");
+      choiceGroup.className = "bubble-choices";
+      choices.forEach(c => {
+        const choiceBtn = document.createElement("button");
+        choiceBtn.type = "button";
+        choiceBtn.className = "btn-bubble-choice";
+        choiceBtn.innerHTML = `<span class="choice-badge">${escapeHtml(c.key)}</span><span class="choice-text">${escapeHtml(c.text)}</span>`;
+        choiceBtn.onclick = () => {
+          choiceGroup.querySelectorAll(".btn-bubble-choice").forEach(b => {
+            b.disabled = true;
+            b.classList.remove("selected");
+          });
+          choiceBtn.classList.add("selected");
+          handleSendMessage(c.send);
+          updateDynamicChoices([]);
+        };
+        choiceGroup.appendChild(choiceBtn);
+      });
+      bubble.appendChild(choiceGroup);
+      updateDynamicChoices(choices);
+    } else {
+      updateDynamicChoices([]);
+    }
+
+    // 2. Audio & Copy action buttons
     const extracted = extractEnglishElements(text);
     if (extracted.word || extracted.sentences.length > 0) {
       const actions = document.createElement("div");
@@ -522,6 +612,7 @@ async function handleSendMessage(msgText) {
 
   messageInput.value = "";
   messageInput.style.height = "auto";
+  updateDynamicChoices([]);
 
   // Prior history (before this current turn)
   const priorHistory = state.conversation.slice(-10);
@@ -641,13 +732,19 @@ messageInput.addEventListener("input", () => {
   messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + "px";
 });
 
-// Quick Chips
-document.querySelectorAll(".chip").forEach(chip => {
-  chip.onclick = () => {
-    const sendVal = chip.getAttribute("data-send");
-    handleSendMessage(sendVal);
-  };
-});
+// Quick Chips Event Delegation
+const quickChipsBar = document.getElementById("quickChipsBar");
+if (quickChipsBar) {
+  quickChipsBar.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (chip) {
+      const sendVal = chip.getAttribute("data-send");
+      if (sendVal) {
+        handleSendMessage(sendVal);
+      }
+    }
+  });
+}
 
 // Clear Chat
 clearBtn.onclick = () => {
@@ -772,3 +869,60 @@ window.onclick = (e) => {
   if (e.target === settingsModal) settingsModal.classList.add("hidden");
   if (e.target === vaultModal) vaultModal.classList.add("hidden");
 };
+
+// PWA Install Prompt Handler
+let deferredPrompt = null;
+const installPwaBtn = document.getElementById("installPwaBtn");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (installPwaBtn) {
+    installPwaBtn.style.display = "inline-flex";
+  }
+});
+
+if (installPwaBtn) {
+  installPwaBtn.onclick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        installPwaBtn.style.display = "none";
+      } else {
+        alert("Gợi ý: Do server đang chạy cục bộ trên Termux (localhost), máy chủ Google không thể đóng gói WebAPK tự động. Bạn chỉ cần bấm Menu 3 chấm của Chrome -> chọn 'Tạo lối tắt' (hoặc 'Thêm vào màn hình chính') là sẽ ghim được icon ứng dụng ra màn hình chính!");
+      }
+      deferredPrompt = null;
+    } else {
+      alert("Để ghim ứng dụng ra màn hình chính: Bấm Menu 3 chấm của Chrome -> chọn 'Tạo lối tắt' (hoặc 'Thêm vào màn hình chính').");
+    }
+  };
+}
+
+window.addEventListener("appinstalled", () => {
+  if (installPwaBtn) installPwaBtn.style.display = "none";
+  deferredPrompt = null;
+});
+
+// Register PWA Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => {
+        reg.onupdatefound = () => {
+          const installingWorker = reg.installing;
+          if (installingWorker) {
+            installingWorker.onstatechange = () => {
+              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[PWA] Đã cập nhật phiên bản mới.');
+              }
+            };
+          }
+        };
+      })
+      .catch((err) => {
+        console.warn('[PWA] Service Worker registration skipped:', err);
+      });
+  });
+}
+

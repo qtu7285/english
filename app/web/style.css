@@ -467,16 +467,94 @@ body {
 
 .chip.chip-choice {
   font-weight: 700;
-  color: var(--primary);
-  border-color: rgba(56, 189, 248, 0.4);
-  background: rgba(56, 189, 248, 0.08);
-  min-width: 36px;
+  color: #38bdf8;
+  border: 1px solid #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  min-width: 38px;
   text-align: center;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
 }
 
-.chip.chip-choice:hover {
-  background: var(--primary);
-  color: #0f172a;
+.chip.chip-choice:hover, .chip.chip-choice:active {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+/* Dynamic Multiple Choice Buttons inside Question Bubble */
+.bubble-choices {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 480px) {
+  .bubble-choices {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.btn-bubble-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  transition: all 0.15s ease-in-out;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-bubble-choice:hover:not(:disabled),
+.btn-bubble-choice:active:not(:disabled) {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-bubble-choice.selected {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.btn-bubble-choice:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.choice-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.btn-bubble-choice.selected .choice-badge {
+  background: #ffffff;
+  color: #0284c7;
+}
+
+.choice-text {
+  flex: 1;
+  word-break: break-word;
 }
 
 /* Footer / Input Bar */
