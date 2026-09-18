@@ -34,6 +34,7 @@ File `profile.json` trong mỗi thư mục người học có định dạng JSO
   "display_name": "qtu",
   "avatar_user": "🧑‍🎓",
   "avatar_ai": "🤖",
+  "avatar_target": "🎯",
   "ai_engine": "antigravity",
   "gemini_model": "gemini-3.6-flash",
   "tts_rate": 0.9,
@@ -46,6 +47,7 @@ File `profile.json` trong mỗi thư mục người học có định dạng JSO
 - `display_name`: Tên hiển thị thân thiện trên giao diện.
 - `avatar_user`: Biểu tượng avatar đại diện người học (emoji hoặc ký hiệu).
 - `avatar_ai`: Biểu tượng avatar đại diện cho gia sư AI.
+- `avatar_target`: Biểu tượng đại diện trước từ vựng mục tiêu (mặc định: `🎯`).
 - `ai_engine`: Động cơ AI mặc định (`antigravity` hoặc `gemini`).
 - `gemini_model`: Tên mô hình khi sử dụng Gemini REST API.
 - `tts_rate`: Tốc độ phát âm Text-to-Speech (mặc định: `0.9`).

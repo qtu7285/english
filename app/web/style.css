@@ -335,15 +335,95 @@ body {
 }
 
 .badge {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 1.2;
 }
 
-.badge-en { background: rgba(56, 189, 248, 0.15); color: var(--accent-en); border: 1px solid rgba(56, 189, 248, 0.3); }
-.badge-vi { background: rgba(248, 113, 113, 0.15); color: var(--accent-vi); border: 1px solid rgba(248, 113, 113, 0.3); }
-.badge-tool { background: rgba(74, 222, 128, 0.15); color: var(--accent-ok); border: 1px solid rgba(74, 222, 128, 0.3); }
+.badge-en {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  font-size: 15px;
+  padding: 1px 5px;
+  margin-right: 4px;
+}
+
+.badge-vi {
+  background: rgba(248, 113, 113, 0.15);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  font-size: 15px;
+  padding: 1px 5px;
+  margin-right: 4px;
+}
+
+.badge-target {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  font-size: 15px;
+  padding: 1px 5px;
+  margin-right: 6px;
+}
+
+.badge-ok, .badge-tool {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--accent-ok);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  font-size: 13px;
+  padding: 1px 6px;
+  margin-right: 4px;
+}
+
+.badge-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-size: 13px;
+  padding: 1px 6px;
+  margin-right: 4px;
+}
+
+.badge-warn {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  font-size: 13px;
+  padding: 1px 6px;
+  margin-right: 4px;
+}
+
+.badge-next {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  font-size: 13px;
+  padding: 1px 6px;
+  margin-right: 4px;
+}
+
+.badge-confirm {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-size: 13px;
+  padding: 1px 6px;
+  margin-right: 4px;
+}
+
+.badge-diff {
+  font-size: 11px;
+  padding: 2px 6px;
+  margin-left: 4px;
+}
+
+.badge-d1 { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+.badge-d2 { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+.badge-d3 { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
 .hint-text {
   font-size: 13px;
@@ -853,6 +933,52 @@ body {
 
 .tab-content {
   display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.modal-tabs {
+  display: flex;
+  background: rgba(15, 23, 42, 0.5);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 12px;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.modal-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.modal-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  touch-action: manipulation;
+}
+
+.modal-tab-btn:hover {
+  color: var(--text-main);
+}
+
+.modal-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: rgba(56, 189, 248, 0.06);
 }
 
 /* Settings Section & Avatar Picker */

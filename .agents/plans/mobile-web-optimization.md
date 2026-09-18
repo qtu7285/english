@@ -65,8 +65,22 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
 - [x] **Bước 12: Tối giản Thanh Header - Gỡ bỏ Nút Vault và Modal Duyệt File khỏi Giao diện Học viên**
   - [x] Xóa nút `#vaultBtn` trên thanh Header trong [`index.html`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/index.html).
   - [x] Xóa modal `#vaultModal` khỏi DOM, bọc an toàn các sự kiện trong [`app.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/app.js).
-  - [x] Nâng cấp Service Worker lên `engtutor-v5` trong [`sw.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/sw.js).
+  - [x] Nâng cấp Service Worker lên `engtutor-v6` trong [`sw.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/sw.js).
   - [x] Thanh Header trên điện thoại giờ chỉ còn logo, nút Cài đặt và nút Xóa cuộc trò chuyện, cực kỳ thoáng mắt và tập trung 100% vào học tiếng Anh.
+
+- [x] **Bước 13: Trực quan hóa nhãn ngôn ngữ và trạng thái bằng Emoji trên Web UI**
+  - [x] Chuyển đổi nhãn ngôn ngữ văn bản thô `[EN]` thành cờ 🇬🇧 và `[VI]` thành cờ 🇻🇳 sắc nét, gọn gàng, bỏ hẳn chữ `[EN]` / `[VI]` rườm rà.
+  - [x] Chuyển đổi các nhãn trạng thái khác thành emoji trực quan: `[OK]` -> ✅, `[X]` -> ❌, `[~]` -> ⚠️, `[RETRY]` -> 🔄, `[SAVE]` -> 💾, `[NEXT]` -> ⏩, `[CONFIRM]` -> 💬, `[D1]/[D2]/[D3]` -> 🟢/🟡/🔴.
+  - [x] Tối ưu CSS badge với viền mờ, kích thước chữ 15px cho cờ và 13px cho biểu tượng trạng thái, tự động căn giữa dòng.
+  - [x] Bổ sung nhận diện câu tiếng Anh bắt đầu bằng `[EN]` trong `extractEnglishElements` và hỗ trợ nút phát âm 🔊 cho dòng có nhãn cờ 🇬🇧 trong `processLineForAudio`.
+  - [x] Nâng cấp Service Worker lên `engtutor-v7` trong [`sw.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/sw.js).
+
+- [x] **Bước 14: Tab cấu hình Emoji chuyên biệt & Hiển thị từ mục tiêu `🎯 capable` trong khung chat**
+  - [x] Tái cấu trúc Cài đặt thành hệ thống 3 Tab rõ ràng, khoa học: `🎨 Emoji & Hồ sơ`, `🤖 Động cơ AI`, `🔊 Giọng đọc`.
+  - [x] Thêm bộ chọn biểu tượng từ mục tiêu (Target Word Emoji: 🎯, 📖, 💡, 💎, 🚀, 🔍, 📌, ✨ hoặc tự nhập) trong tab Emoji.
+  - [x] Lưu trường `avatar_target` vào `USERS/<username>/profile.json` qua API Golang `/api/user/profile`.
+  - [x] Khi người học nhập từ cần học (ví dụ: `capable` hoặc `.capable`), bong bóng chat của người học hiển thị trực quan dạng `🎯 capable` (với badge emoji mục tiêu và từ in đậm) thay vì hiển thị dấu chấm `.capable` thô.
+  - [x] Nâng cấp Service Worker lên `engtutor-v8` trong [`sw.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/sw.js).
 
 ---
 
@@ -83,3 +97,5 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
 9. [x] Thao tác vuốt xuống khi đang ở đỉnh trang chat kích hoạt hiệu ứng loading, rung nhẹ và tự động làm mới ứng dụng (tiện dụng trên PWA).
 10. [x] Không còn các nút lệnh `.` cố định ban đầu; ô gõ tin nhắn luôn hiển thị trọn vẹn, không bị đẩy trôi hoặc che khuất sau khi refresh trang.
 11. [x] Giao diện người học tinh gọn, tập trung hoàn toàn vào hội thoại học tập, tra từ và làm bài tập.
+12. [x] Nhãn ngôn ngữ và trạng thái được tự động hiển thị dưới dạng emoji sinh động (🇬🇧, 🇻🇳, ✅, ❌, ⏩...) trên Web UI mà vẫn bảo toàn định dạng văn bản thô an toàn cho CLI Termux.
+13. [x] Cài đặt chia thành các tab chuyên biệt với tab cấu hình Emoji đầy đủ (User, AI, Target Word) và hiển thị từ vựng trong chat dưới dạng `🎯 <từ>` thay vì `.<từ>`.

@@ -31,6 +31,7 @@ const state = {
   username: localStorage.getItem("username") || "qtu",
   avatarUser: localStorage.getItem("avatar_user") || "🧑‍🎓",
   avatarAI: localStorage.getItem("avatar_ai") || "🤖",
+  avatarTarget: localStorage.getItem("avatar_target") || "🎯",
   engine: localStorage.getItem("ai_engine") || "antigravity",
   apiKey: localStorage.getItem("gemini_api_key") || "",
   model: initialModel,
@@ -59,6 +60,8 @@ const userAvatarPicker = document.getElementById("userAvatarPicker");
 const customUserAvatarInput = document.getElementById("customUserAvatarInput");
 const aiAvatarPicker = document.getElementById("aiAvatarPicker");
 const customAiAvatarInput = document.getElementById("customAiAvatarInput");
+const targetAvatarPicker = document.getElementById("targetAvatarPicker");
+const customTargetAvatarInput = document.getElementById("customTargetAvatarInput");
 const engineSelect = document.getElementById("engineSelect");
 const engineHint = document.getElementById("engineHint");
 const apiKeyGroup = document.getElementById("apiKeyGroup");
@@ -69,6 +72,7 @@ const customModelInput = document.getElementById("customModelInput");
 const enableVaultToolsCheck = document.getElementById("enableVaultToolsCheck");
 const ttsRate = document.getElementById("ttsRate");
 const ttsRateVal = document.getElementById("ttsRateVal");
+const testVoiceBtn = document.getElementById("testVoiceBtn");
 
 const vaultBtn = document.getElementById("vaultBtn");
 const vaultModal = document.getElementById("vaultModal");
@@ -103,6 +107,7 @@ async function syncUserProfileFromServer(targetUser = null) {
     if (data.username) state.username = data.username;
     if (data.avatar_user) state.avatarUser = data.avatar_user;
     if (data.avatar_ai) state.avatarAI = data.avatar_ai;
+    if (data.avatar_target) state.avatarTarget = data.avatar_target;
     if (data.ai_engine) state.engine = data.ai_engine;
     if (data.gemini_model) state.model = data.gemini_model;
     if (data.tts_rate) state.ttsRate = data.tts_rate;
@@ -110,6 +115,7 @@ async function syncUserProfileFromServer(targetUser = null) {
     localStorage.setItem("username", state.username);
     localStorage.setItem("avatar_user", state.avatarUser);
     localStorage.setItem("avatar_ai", state.avatarAI);
+    localStorage.setItem("avatar_target", state.avatarTarget);
     localStorage.setItem("ai_engine", state.engine);
     localStorage.setItem("gemini_model", state.model);
     localStorage.setItem("tts_rate", state.ttsRate);
@@ -247,6 +253,17 @@ function extractEnglishElements(text) {
       clean = clean.substring(0, parenIdx).replace(/[*#`"“”]/g, "").trim();
       if (clean && !VIETNAMESE_REGEX.test(clean) && clean.split(/\s+/).length >= 3) {
         if (!sentences.includes(clean)) sentences.push(clean);
+      }
+    }
+  });
+
+  // 4. Scan lines starting with [EN] for English sentences
+  lines.forEach(line => {
+    const enMatch = line.match(/^[\s\-\*•]*\[EN\](?::)?\s*(.+)$/i);
+    if (enMatch) {
+      const cleanEn = enMatch[1].replace(/[*#`"“”]/g, "").trim();
+      if (cleanEn && !cleanEn.includes("___") && !VIETNAMESE_REGEX.test(cleanEn) && cleanEn.split(/\s+/).length >= 2) {
+        if (!sentences.includes(cleanEn)) sentences.push(cleanEn);
       }
     }
   });
@@ -439,6 +456,16 @@ function processLineForAudio(line) {
     }
   }
 
+  // Pattern 4: Line starting with EN flag badge and English sentence (without blank ___)
+  const enBadgeMatch = line.match(/^(?:<p>)?[\s\-]*(?:<span class="badge badge-en"[^>]*>.*?<\/span>)\s*([A-Za-z0-9\s,.'’!?\-]{4,})/);
+  if (enBadgeMatch) {
+    const sent = stripHtmlAndEntities(enBadgeMatch[1]).replace(/[*#`"“”]/g, "").trim();
+    if (sent && !sent.includes("___") && !VIETNAMESE_REGEX.test(sent) && sent.split(/\s+/).length >= 2) {
+      const btn = makeAudioButton(sent);
+      if (btn && !line.includes(btn)) return line + ' ' + btn;
+    }
+  }
+
   return line;
 }
 
@@ -475,13 +502,19 @@ function renderMarkdown(text) {
   html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
   html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
 
-  // Status Badges
-  html = html.replace(/\[OK\]/g, '<span class="badge badge-tool">[OK]</span>');
-  html = html.replace(/\[EN\]/g, '<span class="badge badge-en">[EN]</span>');
-  html = html.replace(/\[VI\]/g, '<span class="badge badge-vi">[VI]</span>');
-  html = html.replace(/\[NEXT\]/g, '<strong style="color: #fbbf24;">[NEXT]</strong>');
-  html = html.replace(/\[CONFIRM\]/g, '<strong style="color: #38bdf8;">[CONFIRM]</strong>');
-  html = html.replace(/\[D([1-3])\]/g, '<span class="badge badge-tool">[D$1]</span>');
+  // Status Badges & Emojis
+  html = html.replace(/\[EN\](?::)?/g, '<span class="badge badge-en" title="Tiếng Anh">🇬🇧</span>');
+  html = html.replace(/\[VI\](?::)?/g, '<span class="badge badge-vi" title="Tiếng Việt">🇻🇳</span>');
+  html = html.replace(/\[OK\]/g, '<span class="badge badge-ok" title="Chính xác">✅</span>');
+  html = html.replace(/\[X\]/g, '<span class="badge badge-error" title="Chưa đúng">❌</span>');
+  html = html.replace(/\[~\]/g, '<span class="badge badge-warn" title="Gần đúng">⚠️</span>');
+  html = html.replace(/\[RETRY\]/g, '<span class="badge badge-warn" title="Thử lại">🔄</span>');
+  html = html.replace(/\[SAVE\]/g, '<span class="badge badge-tool" title="Đã lưu">💾</span>');
+  html = html.replace(/\[NEXT\]/g, '<span class="badge badge-next" title="Tiếp theo">⏩</span>');
+  html = html.replace(/\[CONFIRM\]/g, '<span class="badge badge-confirm" title="Xác nhận">💬</span>');
+  html = html.replace(/\[D1\]/g, '<span class="badge badge-diff badge-d1" title="Cơ bản">🟢 D1</span>');
+  html = html.replace(/\[D2\]/g, '<span class="badge badge-diff badge-d2" title="Trung bình">🟡 D2</span>');
+  html = html.replace(/\[D3\]/g, '<span class="badge badge-diff badge-d3" title="Nâng cao">🔴 D3</span>');
 
   // Place audio icon at the END of lines containing target words or example sentences
   const rawLines = html.split('\n');
@@ -627,7 +660,20 @@ function appendMessage(role, text, toolLogs = []) {
 
   const content = document.createElement("div");
   content.className = "bubble-content";
-  content.innerHTML = renderMarkdown(text);
+
+  if (role === "user") {
+    const headwordMatch = text.match(/^\.([A-Za-z][A-Za-z\s\-]{1,29})$/);
+    const controlCmds = ["s", "g", "help", "cd", "m", "q", "p", "t"];
+    if (headwordMatch && !controlCmds.includes(headwordMatch[1].toLowerCase())) {
+      const targetEmoji = state.avatarTarget || "🎯";
+      const word = headwordMatch[1];
+      content.innerHTML = `<span class="badge badge-target" title="Từ mục tiêu">${targetEmoji}</span> <strong>${escapeHtml(word)}</strong>`;
+    } else {
+      content.innerHTML = renderMarkdown(text);
+    }
+  } else {
+    content.innerHTML = renderMarkdown(text);
+  }
 
   bubble.appendChild(content);
 
@@ -1044,6 +1090,49 @@ if (customAiAvatarInput) {
   });
 }
 
+// Picker biểu tượng từ mục tiêu (Target Word)
+if (targetAvatarPicker) {
+  targetAvatarPicker.addEventListener("click", (e) => {
+    const btn = e.target.closest(".avatar-opt");
+    if (!btn) return;
+    triggerHaptic(15);
+    targetAvatarPicker.querySelectorAll(".avatar-opt").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    if (customTargetAvatarInput) customTargetAvatarInput.value = "";
+  });
+}
+if (customTargetAvatarInput) {
+  customTargetAvatarInput.addEventListener("input", () => {
+    if (customTargetAvatarInput.value.trim() && targetAvatarPicker) {
+      targetAvatarPicker.querySelectorAll(".avatar-opt").forEach(b => b.classList.remove("selected"));
+    }
+  });
+}
+
+// Chuyển Tab trong Cài đặt (Emoji & Hồ sơ / Động cơ AI / Giọng đọc)
+const settingsTabs = document.getElementById("settingsTabs");
+if (settingsTabs) {
+  settingsTabs.querySelectorAll(".modal-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      triggerHaptic(15);
+      const tabId = btn.getAttribute("data-tab");
+      settingsTabs.querySelectorAll(".modal-tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll("#settingsModal .tab-content").forEach(c => c.classList.remove("active"));
+      btn.classList.add("active");
+      const targetContent = document.getElementById(tabId);
+      if (targetContent) targetContent.classList.add("active");
+    });
+  });
+}
+
+// Nút nghe thử giọng đọc mẫu
+if (testVoiceBtn) {
+  testVoiceBtn.onclick = () => {
+    triggerHaptic(25);
+    speakText("Capable. You are capable of mastering English naturally.");
+  };
+}
+
 settingsBtn.onclick = () => {
   if (usernameInput) usernameInput.value = state.username || "qtu";
 
@@ -1076,6 +1165,23 @@ settingsBtn.onclick = () => {
     });
     if (customAiAvatarInput) {
       customAiAvatarInput.value = matchedAi ? "" : (state.avatarAI || "");
+    }
+  }
+
+  // Đồng bộ picker Biểu tượng Từ mục tiêu (Target Word)
+  if (targetAvatarPicker) {
+    let matchedTarget = false;
+    const curTarget = state.avatarTarget || "🎯";
+    targetAvatarPicker.querySelectorAll(".avatar-opt").forEach(b => {
+      if (b.getAttribute("data-avatar") === curTarget) {
+        b.classList.add("selected");
+        matchedTarget = true;
+      } else {
+        b.classList.remove("selected");
+      }
+    });
+    if (customTargetAvatarInput) {
+      customTargetAvatarInput.value = matchedTarget ? "" : curTarget;
     }
   }
 
@@ -1128,6 +1234,15 @@ saveSettingsBtn.onclick = () => {
     if (sel) state.avatarAI = sel.getAttribute("data-avatar");
   }
 
+  // Target Word avatar
+  if (customTargetAvatarInput && customTargetAvatarInput.value.trim()) {
+    state.avatarTarget = customTargetAvatarInput.value.trim();
+  } else if (targetAvatarPicker) {
+    const sel = targetAvatarPicker.querySelector(".avatar-opt.selected");
+    if (sel) state.avatarTarget = sel.getAttribute("data-avatar");
+  }
+  if (!state.avatarTarget) state.avatarTarget = "🎯";
+
   state.engine = engineSelect.value;
   state.apiKey = apiKeyInput.value.trim();
 
@@ -1143,6 +1258,7 @@ saveSettingsBtn.onclick = () => {
   localStorage.setItem("username", state.username);
   localStorage.setItem("avatar_user", state.avatarUser);
   localStorage.setItem("avatar_ai", state.avatarAI);
+  localStorage.setItem("avatar_target", state.avatarTarget);
   localStorage.setItem("ai_engine", state.engine);
   localStorage.setItem("gemini_api_key", state.apiKey);
   localStorage.setItem("gemini_model", state.model);
@@ -1160,6 +1276,7 @@ saveSettingsBtn.onclick = () => {
       display_name: state.username,
       avatar_user: state.avatarUser,
       avatar_ai: state.avatarAI,
+      avatar_target: state.avatarTarget,
       ai_engine: state.engine,
       gemini_model: state.model,
       tts_rate: state.ttsRate
@@ -1167,8 +1284,7 @@ saveSettingsBtn.onclick = () => {
   }).catch(e => console.warn("[Profile] Lưu profile lên server thất bại:", e));
 
   settingsModal.classList.add("hidden");
-  const engineDesc = state.engine === "antigravity" ? "Antigravity CLI (Termux Pro)" : `Gemini REST API (${state.model})`;
-  appendMessage("assistant", `[OK] Đã lưu cài đặt cho người học #${state.username} (Avatar: ${state.avatarUser} & ${state.avatarAI}).`);
+  appendMessage("assistant", `[OK] Đã lưu cài đặt cho người học #${state.username} (User: ${state.avatarUser}, AI: ${state.avatarAI}, Từ mục tiêu: ${state.avatarTarget}).`);
 };
 
 ttsRate.oninput = () => {

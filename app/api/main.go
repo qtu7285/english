@@ -202,14 +202,15 @@ func (s *ServerApp) handleStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 type UserProfile struct {
-	Username    string  `json:"username"`
-	DisplayName string  `json:"display_name"`
-	AvatarUser  string  `json:"avatar_user"`
-	AvatarAI    string  `json:"avatar_ai"`
-	AIEngine    string  `json:"ai_engine,omitempty"`
-	GeminiModel string  `json:"gemini_model,omitempty"`
-	TTSRate     float64 `json:"tts_rate,omitempty"`
-	UpdatedAt   string  `json:"updated_at,omitempty"`
+	Username     string  `json:"username"`
+	DisplayName  string  `json:"display_name"`
+	AvatarUser   string  `json:"avatar_user"`
+	AvatarAI     string  `json:"avatar_ai"`
+	AvatarTarget string  `json:"avatar_target,omitempty"`
+	AIEngine     string  `json:"ai_engine,omitempty"`
+	GeminiModel  string  `json:"gemini_model,omitempty"`
+	TTSRate      float64 `json:"tts_rate,omitempty"`
+	UpdatedAt    string  `json:"updated_at,omitempty"`
 }
 
 var validUserRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]*$`)
@@ -239,14 +240,15 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 		data, err := os.ReadFile(profilePath)
 		if err != nil {
 			defaultProf := UserProfile{
-				Username:    username,
-				DisplayName: username,
-				AvatarUser:  "🧑‍🎓",
-				AvatarAI:    "🤖",
-				AIEngine:    "antigravity",
-				GeminiModel: "gemini-3.6-flash",
-				TTSRate:     0.9,
-				UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
+				Username:     username,
+				DisplayName:  username,
+				AvatarUser:   "🧑‍🎓",
+				AvatarAI:     "🤖",
+				AvatarTarget: "🎯",
+				AIEngine:     "antigravity",
+				GeminiModel:  "gemini-3.6-flash",
+				TTSRate:      0.9,
+				UpdatedAt:    time.Now().UTC().Format(time.RFC3339),
 			}
 			sendJSON(w, http.StatusOK, defaultProf)
 			return
@@ -256,6 +258,9 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 		if err := json.Unmarshal(data, &prof); err != nil {
 			sendError(w, http.StatusInternalServerError, "Malformed profile.json: "+err.Error())
 			return
+		}
+		if prof.AvatarTarget == "" {
+			prof.AvatarTarget = "🎯"
 		}
 		sendJSON(w, http.StatusOK, prof)
 		return
@@ -285,6 +290,9 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 		}
 		if prof.AvatarAI == "" {
 			prof.AvatarAI = "🤖"
+		}
+		if prof.AvatarTarget == "" {
+			prof.AvatarTarget = "🎯"
 		}
 		if prof.TTSRate == 0 {
 			prof.TTSRate = 0.9
