@@ -41,7 +41,9 @@ const state = {
   conversation: [],
   currentVaultPath: "",
   selectedVaultFile: null,
-  quota: null
+  quota: null,
+  role: localStorage.getItem("user_role") || (localStorage.getItem("username") === "qtu" ? "admin" : "learner"),
+  canViewAIInfo: localStorage.getItem("can_view_ai_info") === "true" || (localStorage.getItem("username") === "qtu")
 };
 
 // DOM Elements
@@ -56,6 +58,12 @@ const initialAiAvatar = document.getElementById("initialAiAvatar");
 const headerModelSelect = document.getElementById("headerModelSelect");
 const headerModelLabel = document.getElementById("headerModelLabel");
 const headerModelIndicator = document.getElementById("headerModelIndicator");
+const drawerAiQuotaCard = document.getElementById("drawerAiQuotaCard");
+const drawerAiEmail = document.getElementById("drawerAiEmail");
+const drawerAiQuota5h = document.getElementById("drawerAiQuota5h");
+const drawerAiQuotaWeek = document.getElementById("drawerAiQuotaWeek");
+const adminUsersSection = document.getElementById("adminUsersSection");
+const adminUsersList = document.getElementById("adminUsersList");
 
 // Navigation Drawer Elements
 const menuToggleBtn = document.getElementById("menuToggleBtn");
@@ -149,6 +157,8 @@ async function syncUserProfileFromServer(targetUser = null) {
     if (data.avatar_ai) state.avatarAI = data.avatar_ai;
     if (data.avatar_target) state.avatarTarget = data.avatar_target;
     if (typeof data.show_chat_avatars === "boolean") state.showChatAvatars = data.show_chat_avatars;
+    if (data.role) state.role = data.role;
+    if (typeof data.can_view_ai_info === "boolean") state.canViewAIInfo = data.can_view_ai_info;
     if (data.ai_engine) state.engine = data.ai_engine;
     if (data.gemini_model) state.model = data.gemini_model;
     if (data.tts_rate) state.ttsRate = data.tts_rate;
@@ -158,6 +168,8 @@ async function syncUserProfileFromServer(targetUser = null) {
     localStorage.setItem("avatar_ai", state.avatarAI);
     localStorage.setItem("avatar_target", state.avatarTarget);
     localStorage.setItem("show_chat_avatars", state.showChatAvatars);
+    localStorage.setItem("user_role", state.role || "learner");
+    localStorage.setItem("can_view_ai_info", state.canViewAIInfo);
     localStorage.setItem("ai_engine", state.engine);
     localStorage.setItem("gemini_model", state.model);
     localStorage.setItem("tts_rate", state.ttsRate);
@@ -165,6 +177,7 @@ async function syncUserProfileFromServer(targetUser = null) {
     updateExistingAvatarsInChat();
     applyChatAvatarsVisibility();
     syncHeaderModelSelect();
+    fetchQuotaFromServer();
   } catch (e) {
     console.warn("[Profile] Đồng bộ profile từ server bị hoãn:", e);
   }
@@ -189,7 +202,7 @@ function updateHeaderModelDisplay() {
     headerModelSelect.value = "gemini-3.6-flash";
   }
 
-  // Hiển thị gọn trên Header: ví dụ "3.6 Flash (84%)"
+  // Hiển thị gọn trên Header: ví dụ "3.6 Flash (84%)" nếu có quyền xem quota, ngược lại chỉ hiện "3.6 Flash"
   if (headerModelLabel) {
     if (state.quota && state.quota.gemini_5h) {
       headerModelLabel.innerText = `${baseName} (${state.quota.gemini_5h})`;
@@ -198,28 +211,30 @@ function updateHeaderModelDisplay() {
     }
   }
 
-  // Hiển thị chi tiết trong Dropdown: ví dụ "3.6 Flash (5h: 84% | Tuần: 26%)"
-  if (state.quota) {
-    const q5h = state.quota.gemini_5h || "";
-    const qWeek = state.quota.gemini_week || "";
-    const suffix = (q5h && qWeek) ? ` (5h: ${q5h} | Tuần: ${qWeek})` : (q5h ? ` (${q5h})` : "");
-    Array.from(headerModelSelect.options).forEach(opt => {
-      const b = MODEL_DISPLAY_NAMES[opt.value] || opt.value;
-      opt.text = `${b}${suffix}`;
-    });
-  }
+  // Hiển thị chi tiết trong Dropdown nếu có quota
+  const q5h = (state.quota && state.quota.gemini_5h) ? state.quota.gemini_5h : "";
+  const qWeek = (state.quota && state.quota.gemini_week) ? state.quota.gemini_week : "";
+  const suffix = (q5h && qWeek) ? ` (5h: ${q5h} | Tuần: ${qWeek})` : (q5h ? ` (${q5h})` : "");
+  Array.from(headerModelSelect.options).forEach(opt => {
+    const b = MODEL_DISPLAY_NAMES[opt.value] || opt.value;
+    opt.text = `${b}${suffix}`;
+  });
 
   // Đổi màu chấm trạng thái theo mức % 5h
-  if (headerModelIndicator && state.quota && state.quota.gemini_5h) {
-    const p = parseInt(state.quota.gemini_5h, 10);
-    if (!isNaN(p)) {
-      if (p > 50) {
-        headerModelIndicator.style.backgroundColor = "var(--accent-ok)";
-      } else if (p >= 20) {
-        headerModelIndicator.style.backgroundColor = "#f59e0b";
-      } else {
-        headerModelIndicator.style.backgroundColor = "var(--accent-err)";
+  if (headerModelIndicator) {
+    if (state.quota && state.quota.gemini_5h) {
+      const p = parseInt(state.quota.gemini_5h, 10);
+      if (!isNaN(p)) {
+        if (p > 50) {
+          headerModelIndicator.style.backgroundColor = "var(--accent-ok)";
+        } else if (p >= 20) {
+          headerModelIndicator.style.backgroundColor = "#f59e0b";
+        } else {
+          headerModelIndicator.style.backgroundColor = "var(--accent-err)";
+        }
       }
+    } else {
+      headerModelIndicator.style.backgroundColor = "var(--accent-ok)";
     }
   }
 }
@@ -230,13 +245,21 @@ function syncHeaderModelSelect() {
 
 async function fetchQuotaFromServer() {
   try {
-    const res = await fetch("/api/quota");
+    const u = (state.username || "qtu").trim().toLowerCase();
+    const res = await fetch(`/api/quota?username=${encodeURIComponent(u)}`);
     if (!res.ok) return;
     const data = await res.json();
     if (data && data.available) {
       state.quota = data;
-      updateHeaderModelDisplay();
+      if (drawerAiQuotaCard) drawerAiQuotaCard.style.display = "flex";
+      if (drawerAiEmail) drawerAiEmail.innerText = data.email || "Google Pro";
+      if (drawerAiQuota5h) drawerAiQuota5h.innerText = data.gemini_5h || "--%";
+      if (drawerAiQuotaWeek) drawerAiQuotaWeek.innerText = data.gemini_week || "--%";
+    } else {
+      state.quota = null;
+      if (drawerAiQuotaCard) drawerAiQuotaCard.style.display = "none";
     }
+    updateHeaderModelDisplay();
   } catch (e) {
     console.warn("[Quota] Không thể tải quota:", e);
   }
@@ -244,7 +267,6 @@ async function fetchQuotaFromServer() {
 
 syncHeaderModelSelect();
 syncUserProfileFromServer();
-fetchQuotaFromServer();
 
 if (headerModelSelect) {
   headerModelSelect.addEventListener("change", () => {
@@ -1463,6 +1485,16 @@ function openSettingsModal(targetTab = null) {
   ttsRate.value = state.ttsRate;
   ttsRateVal.innerText = state.ttsRate + "x";
 
+  // Hiển thị khu vực quản lý quyền cho Admin
+  if (adminUsersSection) {
+    if (state.role === "admin" || state.username === "qtu") {
+      adminUsersSection.style.display = "block";
+      loadAdminUsersList();
+    } else {
+      adminUsersSection.style.display = "none";
+    }
+  }
+
   if (targetTab && settingsTabs) {
     settingsTabs.querySelectorAll(".modal-tab-btn").forEach(b => {
       if (b.getAttribute("data-tab") === targetTab) {
@@ -1481,6 +1513,67 @@ function openSettingsModal(targetTab = null) {
   }
 
   settingsModal.classList.remove("hidden");
+}
+
+async function loadAdminUsersList() {
+  if (!adminUsersList) return;
+  adminUsersList.innerHTML = '<span style="color: var(--text-muted); font-size: 11px;">Đang tải danh sách người học...</span>';
+  try {
+    const res = await fetch(`/api/users/list?username=${encodeURIComponent(state.username || 'qtu')}`);
+    if (!res.ok) {
+      adminUsersList.innerHTML = '<span style="color: var(--accent-err); font-size: 11px;">Không thể tải danh sách người học.</span>';
+      return;
+    }
+    const data = await res.json();
+    const users = (data && data.users) ? data.users : [];
+    const otherUsers = users.filter(u => u.username !== "qtu");
+    if (otherUsers.length === 0) {
+      adminUsersList.innerHTML = '<span style="color: var(--text-muted); font-size: 11px;">Chưa có người học nào khác trong hệ thống.</span>';
+      return;
+    }
+    adminUsersList.innerHTML = "";
+    otherUsers.forEach(u => {
+      const row = document.createElement("div");
+      row.className = "admin-user-row";
+      const isAllowed = !!(u.can_view_ai_info);
+      row.innerHTML = `
+        <div class="admin-user-info">
+          <span>${u.avatar_user || "🧑‍🎓"}</span>
+          <span class="admin-user-name">#${u.username}</span>
+          <span class="admin-user-role-badge ${u.role === 'admin' ? 'admin' : ''}">${u.role === 'admin' ? 'Admin' : 'Người học'}</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer;">
+          <input type="checkbox" class="user-ai-perm-check" data-user="${u.username}" ${isAllowed ? 'checked' : ''}>
+          <span>Xem thông tin AI</span>
+        </label>
+      `;
+      const chk = row.querySelector(".user-ai-perm-check");
+      chk.addEventListener("change", async () => {
+        triggerHaptic(20);
+        const canView = chk.checked;
+        try {
+          await fetch("/api/user/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: u.username,
+              display_name: u.display_name || u.username,
+              avatar_user: u.avatar_user || "🧑‍🎓",
+              avatar_ai: u.avatar_ai || "🤖",
+              avatar_target: u.avatar_target || "🎯",
+              role: u.role || "learner",
+              can_view_ai_info: canView
+            })
+          });
+        } catch (e) {
+          console.warn("[Admin] Cập nhật quyền thất bại:", e);
+        }
+      });
+      adminUsersList.appendChild(row);
+    });
+  } catch (e) {
+    adminUsersList.innerHTML = '<span style="color: var(--accent-err); font-size: 11px;">Lỗi kết nối khi tải danh sách.</span>';
+  }
 }
 
 if (settingsBtn) settingsBtn.onclick = () => openSettingsModal();

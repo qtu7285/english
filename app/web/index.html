@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="English AI">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style.css?v=20">
   <style>
     /* Critical Drawer Shell: ngăn chặn hoàn toàn lỗi vỡ layout khi CSS chưa kịp tải */
     .drawer-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); z-index: 90; backdrop-filter: blur(4px); display: none; }
@@ -197,6 +197,12 @@
               </label>
               <small class="form-hint">Mặc định tắt để tối đa diện tích hiển thị câu và bong bóng chat.</small>
             </div>
+
+            <div class="form-group" id="adminUsersSection" style="display: none; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+              <label style="color: var(--primary); font-weight: 700;">👑 Quản lý quyền người học (Admin):</label>
+              <div id="adminUsersList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;"></div>
+              <small class="form-hint">Chỉ những người học được cấp quyền "Xem thông tin AI" mới thấy Email và % Quota của bạn.</small>
+            </div>
           </div>
 
           <!-- Tab 2: Động cơ AI -->
@@ -327,6 +333,23 @@
       </div>
 
       <div class="drawer-footer">
+        <div class="drawer-ai-quota-card" id="drawerAiQuotaCard" style="display: none;">
+          <div class="drawer-ai-quota-header">
+            <span class="drawer-ai-quota-title">🤖 Tài khoản AI</span>
+            <span class="drawer-ai-quota-email" id="drawerAiEmail">...</span>
+          </div>
+          <div class="drawer-ai-quota-stats">
+            <div class="drawer-ai-quota-stat">
+              <span class="stat-lbl">5 giờ:</span>
+              <span class="stat-val" id="drawerAiQuota5h">--%</span>
+            </div>
+            <div class="drawer-ai-quota-stat">
+              <span class="stat-lbl">Tuần:</span>
+              <span class="stat-val" id="drawerAiQuotaWeek">--%</span>
+            </div>
+          </div>
+        </div>
+
         <button class="drawer-footer-item" id="drawerSettingsBtn" type="button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
@@ -349,6 +372,6 @@
     </aside>
   </div>
 
-  <script src="app.js?v=19"></script>
+  <script src="app.js?v=20"></script>
 </body>
 </html>

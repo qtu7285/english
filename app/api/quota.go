@@ -3,14 +3,20 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 )
 
 type QuotaInfo struct {
+	Email      string `json:"email"`
 	Gemini5h   string `json:"gemini_5h"`
 	GeminiWeek string `json:"gemini_week"`
 	Claude5h   string `json:"claude_5h"`
@@ -31,6 +37,47 @@ var (
 	reClaudeWeek = regexp.MustCompile(`(?i)Claude and GPT models\s+Weekly Limit Remaining\s+([0-9]+%)`)
 	reClaude5h   = regexp.MustCompile(`(?i)Claude and GPT models\s+Five Hour Limit Remaining\s+([0-9]+%)`)
 )
+
+// ExtractAgyEmail extracts the Google email associated with the local Antigravity CLI session
+func ExtractAgyEmail() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	p := filepath.Join(home, ".gemini", "antigravity-cli", "antigravity-oauth-token")
+	data, err := os.ReadFile(p)
+	if err != nil {
+		return ""
+	}
+	var tok struct {
+		IDToken string `json:"id_token"`
+	}
+	if err := json.Unmarshal(data, &tok); err != nil || tok.IDToken == "" {
+		return ""
+	}
+	parts := strings.Split(tok.IDToken, ".")
+	if len(parts) < 2 {
+		return ""
+	}
+	payloadSegment := parts[1]
+	if rem := len(payloadSegment) % 4; rem != 0 {
+		payloadSegment += strings.Repeat("=", 4-rem)
+	}
+	payloadBytes, err := base64.URLEncoding.DecodeString(payloadSegment)
+	if err != nil {
+		payloadBytes, err = base64.RawURLEncoding.DecodeString(parts[1])
+		if err != nil {
+			return ""
+		}
+	}
+	var claims struct {
+		Email string `json:"email"`
+	}
+	if err := json.Unmarshal(payloadBytes, &claims); err != nil {
+		return ""
+	}
+	return claims.Email
+}
 
 func FetchQuotaFromCLI() (*QuotaInfo, error) {
 	agyBin := LocateAgyBinary()
@@ -56,6 +103,7 @@ func FetchQuotaFromCLI() (*QuotaInfo, error) {
 
 	out := stdout.String()
 	q := &QuotaInfo{
+		Email:     ExtractAgyEmail(),
 		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
 	}
 
@@ -100,6 +148,18 @@ func GetCachedQuota() *QuotaInfo {
 }
 
 func (s *ServerApp) handleQuota(w http.ResponseWriter, r *http.Request) {
+	username := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("username")))
+	if username == "" {
+		username = "qtu"
+	}
+	if !s.CheckUserCanViewAIInfo(username) {
+		sendJSON(w, http.StatusOK, map[string]interface{}{
+			"available": false,
+			"reason":    "permission_denied",
+		})
+		return
+	}
+
 	q := GetCachedQuota()
 	if q == nil {
 		sendJSON(w, http.StatusOK, map[string]interface{}{
@@ -109,6 +169,7 @@ func (s *ServerApp) handleQuota(w http.ResponseWriter, r *http.Request) {
 	}
 	sendJSON(w, http.StatusOK, map[string]interface{}{
 		"available":   true,
+		"email":       q.Email,
 		"gemini_5h":   q.Gemini5h,
 		"gemini_week": q.GeminiWeek,
 		"claude_5h":   q.Claude5h,

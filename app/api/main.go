@@ -209,6 +209,8 @@ type UserProfile struct {
 	AvatarAI        string  `json:"avatar_ai"`
 	AvatarTarget    string  `json:"avatar_target,omitempty"`
 	ShowChatAvatars *bool   `json:"show_chat_avatars,omitempty"`
+	Role            string  `json:"role,omitempty"`
+	CanViewAIInfo   *bool   `json:"can_view_ai_info,omitempty"`
 	AIEngine        string  `json:"ai_engine,omitempty"`
 	GeminiModel     string  `json:"gemini_model,omitempty"`
 	TTSRate         float64 `json:"tts_rate,omitempty"`
@@ -216,6 +218,31 @@ type UserProfile struct {
 }
 
 var validUserRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]*$`)
+
+// CheckUserCanViewAIInfo checks if a username has permission to view AI quota and email
+func (s *ServerApp) CheckUserCanViewAIInfo(username string) bool {
+	username = strings.ToLower(strings.TrimSpace(username))
+	if username == "" || username == "qtu" {
+		return true
+	}
+	userDir := filepath.Join(s.Vault.RootDir, "USERS", username)
+	profilePath := filepath.Join(userDir, "profile.json")
+	data, err := os.ReadFile(profilePath)
+	if err != nil {
+		return false
+	}
+	var prof UserProfile
+	if err := json.Unmarshal(data, &prof); err != nil {
+		return false
+	}
+	if prof.Role == "admin" {
+		return true
+	}
+	if prof.CanViewAIInfo != nil && *prof.CanViewAIInfo {
+		return true
+	}
+	return false
+}
 
 func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
@@ -242,6 +269,13 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 		data, err := os.ReadFile(profilePath)
 		if err != nil {
 			f := false
+			t := true
+			role := "learner"
+			canView := &f
+			if username == "qtu" {
+				role = "admin"
+				canView = &t
+			}
 			defaultProf := UserProfile{
 				Username:        username,
 				DisplayName:     username,
@@ -249,6 +283,8 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 				AvatarAI:        "🤖",
 				AvatarTarget:    "🎯",
 				ShowChatAvatars: &f,
+				Role:            role,
+				CanViewAIInfo:   canView,
 				AIEngine:        "antigravity",
 				GeminiModel:     "gemini-3.6-flash",
 				TTSRate:         0.9,
@@ -265,6 +301,19 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 		}
 		if prof.AvatarTarget == "" {
 			prof.AvatarTarget = "🎯"
+		}
+		if prof.Username == "qtu" {
+			prof.Role = "admin"
+			t := true
+			prof.CanViewAIInfo = &t
+		} else {
+			if prof.Role == "" {
+				prof.Role = "learner"
+			}
+			if prof.CanViewAIInfo == nil {
+				f := false
+				prof.CanViewAIInfo = &f
+			}
 		}
 		sendJSON(w, http.StatusOK, prof)
 		return
@@ -301,6 +350,11 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 		if prof.TTSRate == 0 {
 			prof.TTSRate = 0.9
 		}
+		if prof.Username == "qtu" {
+			prof.Role = "admin"
+			t := true
+			prof.CanViewAIInfo = &t
+		}
 		prof.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 
 		userDir := filepath.Join(s.Vault.RootDir, "USERS", prof.Username)
@@ -326,6 +380,53 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendError(w, http.StatusMethodNotAllowed, "Method not allowed")
+}
+
+func (s *ServerApp) handleUsersList(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	caller := strings.ToLower(strings.TrimSpace(r.URL.Query().Get("username")))
+	if caller == "" {
+		caller = "qtu"
+	}
+	if !s.CheckUserCanViewAIInfo(caller) {
+		sendError(w, http.StatusForbidden, "Chỉ quản trị viên mới có quyền xem danh sách người học.")
+		return
+	}
+
+	usersDir := filepath.Join(s.Vault.RootDir, "USERS")
+	entries, err := os.ReadDir(usersDir)
+	if err != nil {
+		sendError(w, http.StatusInternalServerError, "Không thể đọc thư mục USERS: "+err.Error())
+		return
+	}
+
+	var users []UserProfile
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		uName := strings.ToLower(e.Name())
+		pPath := filepath.Join(usersDir, uName, "profile.json")
+		data, err := os.ReadFile(pPath)
+		if err != nil {
+			continue
+		}
+		var p UserProfile
+		if err := json.Unmarshal(data, &p); err == nil {
+			users = append(users, p)
+		}
+	}
+
+	sendJSON(w, http.StatusOK, map[string]interface{}{
+		"users": users,
+	})
 }
 
 func (s *ServerApp) handleVaultList(w http.ResponseWriter, r *http.Request) {
@@ -672,6 +773,7 @@ func main() {
 	mux.HandleFunc("/api/vault/search", app.handleVaultSearch)
 	mux.HandleFunc("/api/chat", app.handleChat)
 	mux.HandleFunc("/api/user/profile", app.handleUserProfile)
+	mux.HandleFunc("/api/users/list", app.handleUsersList)
 
 	// Cho thiết bị khác trong tailnet tải CA về cài, khỏi phải copy file thủ công.
 	mux.HandleFunc("/ca.crt", func(w http.ResponseWriter, r *http.Request) {
