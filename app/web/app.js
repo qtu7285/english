@@ -51,6 +51,7 @@ const sendBtn = document.getElementById("sendBtn");
 const newChatBtn = document.getElementById("newChatBtn") || document.getElementById("clearBtn");
 const clearBtn = newChatBtn;
 const initialAiAvatar = document.getElementById("initialAiAvatar");
+const headerModelSelect = document.getElementById("headerModelSelect");
 
 // Navigation Drawer Elements
 const menuToggleBtn = document.getElementById("menuToggleBtn");
@@ -144,11 +145,43 @@ async function syncUserProfileFromServer(targetUser = null) {
     localStorage.setItem("tts_rate", state.ttsRate);
 
     updateExistingAvatarsInChat();
+    syncHeaderModelSelect();
   } catch (e) {
     console.warn("[Profile] Đồng bộ profile từ server bị hoãn:", e);
   }
 }
+
+function syncHeaderModelSelect() {
+  if (!headerModelSelect) return;
+  const exists = Array.from(headerModelSelect.options).some(opt => opt.value === state.model);
+  if (exists) {
+    headerModelSelect.value = state.model;
+  } else {
+    headerModelSelect.value = "gemini-3.6-flash";
+  }
+}
+syncHeaderModelSelect();
 syncUserProfileFromServer();
+
+if (headerModelSelect) {
+  headerModelSelect.addEventListener("change", () => {
+    triggerHaptic(20);
+    const val = headerModelSelect.value;
+    state.model = val;
+    localStorage.setItem("gemini_model", val);
+    if (!state.apiKey) {
+      state.engine = "antigravity";
+      localStorage.setItem("ai_engine", "antigravity");
+      if (engineSelect) {
+        engineSelect.value = "antigravity";
+        updateEngineUI();
+      }
+    }
+    if (modelSelect) {
+      modelSelect.value = val;
+    }
+  });
+}
 
 // Haptic feedback helper for mobile touch
 function triggerHaptic(ms = 25) {
@@ -1427,6 +1460,7 @@ saveSettingsBtn.onclick = () => {
   localStorage.setItem("tts_rate", state.ttsRate);
 
   updateExistingAvatarsInChat();
+  syncHeaderModelSelect();
 
   // Lưu cấu hình vào USERS/<username>/profile.json qua API Golang
   fetch("/api/user/profile", {

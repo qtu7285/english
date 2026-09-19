@@ -67,8 +67,34 @@ func BuildAgyPrompt(history []map[string]interface{}, currentMsg string, sysProm
 	return sb.String()
 }
 
+// ResolveAgyModel maps friendly model names to Antigravity CLI supported model identifiers
+func ResolveAgyModel(model string) string {
+	m := strings.TrimSpace(strings.ToLower(model))
+	switch {
+	case strings.Contains(m, "3.8") || strings.Contains(m, "flash-3.8"):
+		return "gemini-3.8-flash-high"
+	case strings.Contains(m, "3.7") || strings.Contains(m, "flash-3.7"):
+		return "gemini-3.7-flash-high"
+	case strings.Contains(m, "3.6") || strings.Contains(m, "flash-3.6"):
+		return "gemini-3.6-flash-high"
+	case strings.Contains(m, "pro") || strings.Contains(m, "3.1"):
+		return "gemini-3.1-pro-high"
+	case strings.Contains(m, "sonnet"):
+		return "claude-sonnet-4-6"
+	case strings.Contains(m, "opus"):
+		return "claude-opus-4-6-thinking"
+	case strings.Contains(m, "gpt") || strings.Contains(m, "oss"):
+		return "gpt-oss-120b-medium"
+	default:
+		if m != "" && !strings.HasPrefix(m, "antigravity") {
+			return m
+		}
+		return ""
+	}
+}
+
 // RunAntigravityCLI executes a prompt via the local Antigravity CLI session (Termux Pro)
-func RunAntigravityCLI(prompt string, workspaceDir string) (string, error) {
+func RunAntigravityCLI(prompt string, workspaceDir string, model string) (string, error) {
 	agyBin := LocateAgyBinary()
 	if agyBin == "" {
 		return "", fmt.Errorf("không tìm thấy lệnh 'agy' trên Termux (~/.local/bin/agy)")
@@ -77,12 +103,19 @@ func RunAntigravityCLI(prompt string, workspaceDir string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, agyBin,
+	args := []string{
 		"-p", prompt,
 		"--output-format", "text",
 		"--disable-slash-commands",
 		"--dangerously-skip-permissions",
-	)
+	}
+
+	agyModel := ResolveAgyModel(model)
+	if agyModel != "" {
+		args = append(args, "--model", agyModel)
+	}
+
+	cmd := exec.CommandContext(ctx, agyBin, args...)
 	if workspaceDir != "" {
 		cmd.Dir = workspaceDir
 	}

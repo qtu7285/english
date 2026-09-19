@@ -457,6 +457,8 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 		} else if IsAgyAvailable() {
 			engine = "antigravity"
 		}
+	} else if engine == "gemini" && apiKey == "" && IsAgyAvailable() {
+		engine = "antigravity"
 	}
 
 	if engine == "antigravity" {
@@ -464,9 +466,10 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 			sendError(w, http.StatusServiceUnavailable, "Lệnh Antigravity CLI ('agy') không tìm thấy trên hệ thống Termux.")
 			return
 		}
-		log.Printf("[CHAT AGY] Xử lý qua Antigravity CLI Pro trên Termux (msg=%q)", msg)
+		model := strings.TrimSpace(body.Model)
+		log.Printf("[CHAT AGY] Xử lý qua Antigravity CLI Pro trên Termux (model=%s, msg=%q)", model, msg)
 		fullPrompt := BuildAgyPrompt(body.History, msg, sysPrompt)
-		reply, err := RunAntigravityCLI(fullPrompt, s.Vault.RootDir)
+		reply, err := RunAntigravityCLI(fullPrompt, s.Vault.RootDir, model)
 		if err != nil {
 			log.Printf("[CHAT AGY ERROR] %v", err)
 			sendError(w, http.StatusInternalServerError, err.Error())
