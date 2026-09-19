@@ -82,6 +82,13 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
   - [x] Khi người học nhập từ cần học (ví dụ: `capable` hoặc `.capable`), bong bóng chat của người học hiển thị trực quan dạng `🎯 capable` (với badge emoji mục tiêu và từ in đậm) thay vì hiển thị dấu chấm `.capable` thô.
   - [x] Nâng cấp Service Worker lên `engtutor-v8` trong [`sw.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/sw.js).
 
+- [x] **Bước 15: Sửa triệt để lỗi vỡ HTML nhãn Emoji do bộ lọc âm thanh chèn nhầm vào thuộc tính thẻ**
+  - [x] Phát hiện nguyên nhân: Biểu thức chính quy Pattern 3 trong `processLineForAudio` trước đó quét các chuỗi trong dấu ngoặc kép `"(...)"` để tìm câu tiếng Anh cần phát âm, vô tình khớp nhầm vào các thuộc tính HTML như `class="badge badge-vi"` hay `class="badge badge-next"`. Việc này chèn thẻ `<button>` vào giữa thẻ `<span class=...`, làm vỡ cú pháp thẻ HTML và khiến trình duyệt hiển thị rác `🔊 title="Tiếng Việt">🇻🇳` ra màn hình.
+  - [x] Khắc phục:
+    1. Bỏ qua hoàn toàn việc quét âm thanh trên các dòng nhãn trạng thái, định nghĩa tiếng Việt (`badge-vi`, `badge-next`, `badge-ok`, `badge-confirm`, `badge-error`, `badge-warn`, `badge-diff`).
+    2. Siết chặt Pattern 3 chỉ nhận diện câu trích dẫn tiếng Anh có khoảng trắng/đầu dòng phía trước `(?:^|[\s(])["“]...`, tuyệt đối không bao giờ khớp vào thuộc tính HTML sau dấu `=` (`class="..."`, `title="..."`).
+  - [x] Nâng cấp Service Worker lên `engtutor-v9` trong [`sw.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/sw.js).
+
 ---
 
 ## 3. Tiêu chuẩn Nghiệm thu
@@ -99,3 +106,4 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
 11. [x] Giao diện người học tinh gọn, tập trung hoàn toàn vào hội thoại học tập, tra từ và làm bài tập.
 12. [x] Nhãn ngôn ngữ và trạng thái được tự động hiển thị dưới dạng emoji sinh động (🇬🇧, 🇻🇳, ✅, ❌, ⏩...) trên Web UI mà vẫn bảo toàn định dạng văn bản thô an toàn cho CLI Termux.
 13. [x] Cài đặt chia thành các tab chuyên biệt với tab cấu hình Emoji đầy đủ (User, AI, Target Word) và hiển thị từ vựng trong chat dưới dạng `🎯 <từ>` thay vì `.<từ>`.
+14. [x] Triệt tiêu hoàn toàn hiện tượng vỡ mã thẻ HTML `🔊 title="Tiếng Việt">...`; tất cả các huy hiệu emoji và nút phát âm hiển thị nguyên vẹn, chuẩn xác.

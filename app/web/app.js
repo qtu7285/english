@@ -421,6 +421,11 @@ function updateContextChips(lastText) {
 function processLineForAudio(line) {
   if (!line || line.includes("inline-audio-btn") || line.includes("<pre>") || line.includes("<code>")) return line;
 
+  // Do not process audio for status lines, definitions, or control badges
+  if (line.includes("badge-vi") || line.includes("badge-next") || line.includes("badge-confirm") || line.includes("badge-ok") || line.includes("badge-error") || line.includes("badge-warn") || line.includes("badge-diff")) {
+    return line;
+  }
+
   // Pattern 1: Target Headword, e.g. <strong>capable</strong> or <h3>capable</h3>
   const boldHeadword = line.match(/^[\s\-]*(?:<h[1-3]>)?\s*<strong>([A-Za-z][A-Za-z\s\-]{1,29})<\/strong>/);
   if (boldHeadword) {
@@ -446,8 +451,8 @@ function processLineForAudio(line) {
     }
   }
 
-  // Pattern 3: Explicit quoted English sentence anywhere in the line
-  const quoteMatch = line.match(/(?:&quot;|["“])([^"“”&<]{4,})(?:&quot;|["”])/);
+  // Pattern 3: Explicit quoted English sentence anywhere in the line (must NOT match inside HTML tags or attributes)
+  const quoteMatch = line.match(/(?:^|[\s(])(?:&quot;|["“])([A-Za-z0-9\s,.'’!?\-]{4,})(?:&quot;|["”])(?=[\s),.!?]|$)/);
   if (quoteMatch) {
     const cleanQuote = stripHtmlAndEntities(quoteMatch[1]).replace(/[*#`]/g, "").trim();
     if (cleanQuote && !VIETNAMESE_REGEX.test(cleanQuote) && cleanQuote.split(/\s+/).length >= 2) {
