@@ -32,6 +32,7 @@ const state = {
   avatarUser: localStorage.getItem("avatar_user") || "🧑‍🎓",
   avatarAI: localStorage.getItem("avatar_ai") || "🤖",
   avatarTarget: localStorage.getItem("avatar_target") || "🎯",
+  showChatAvatars: localStorage.getItem("show_chat_avatars") === "true",
   engine: localStorage.getItem("ai_engine") || "antigravity",
   apiKey: localStorage.getItem("gemini_api_key") || "",
   model: initialModel,
@@ -80,6 +81,7 @@ const aiAvatarPicker = document.getElementById("aiAvatarPicker");
 const customAiAvatarInput = document.getElementById("customAiAvatarInput");
 const targetAvatarPicker = document.getElementById("targetAvatarPicker");
 const customTargetAvatarInput = document.getElementById("customTargetAvatarInput");
+const showChatAvatarsCheck = document.getElementById("showChatAvatarsCheck");
 const engineSelect = document.getElementById("engineSelect");
 const engineHint = document.getElementById("engineHint");
 const apiKeyGroup = document.getElementById("apiKeyGroup");
@@ -121,6 +123,17 @@ function updateExistingAvatarsInChat() {
   }
 }
 
+// Điều khiển ẩn/hiện avatar trong khung chat
+function applyChatAvatarsVisibility() {
+  if (!chatMessages) return;
+  if (state.showChatAvatars) {
+    chatMessages.classList.remove("hide-avatars");
+  } else {
+    chatMessages.classList.add("hide-avatars");
+  }
+}
+applyChatAvatarsVisibility();
+
 // Đồng bộ hồ sơ người dùng từ USERS/<username>/profile.json trên máy chủ
 async function syncUserProfileFromServer(targetUser = null) {
   try {
@@ -132,6 +145,7 @@ async function syncUserProfileFromServer(targetUser = null) {
     if (data.avatar_user) state.avatarUser = data.avatar_user;
     if (data.avatar_ai) state.avatarAI = data.avatar_ai;
     if (data.avatar_target) state.avatarTarget = data.avatar_target;
+    if (typeof data.show_chat_avatars === "boolean") state.showChatAvatars = data.show_chat_avatars;
     if (data.ai_engine) state.engine = data.ai_engine;
     if (data.gemini_model) state.model = data.gemini_model;
     if (data.tts_rate) state.ttsRate = data.tts_rate;
@@ -140,11 +154,13 @@ async function syncUserProfileFromServer(targetUser = null) {
     localStorage.setItem("avatar_user", state.avatarUser);
     localStorage.setItem("avatar_ai", state.avatarAI);
     localStorage.setItem("avatar_target", state.avatarTarget);
+    localStorage.setItem("show_chat_avatars", state.showChatAvatars);
     localStorage.setItem("ai_engine", state.engine);
     localStorage.setItem("gemini_model", state.model);
     localStorage.setItem("tts_rate", state.ttsRate);
 
     updateExistingAvatarsInChat();
+    applyChatAvatarsVisibility();
     syncHeaderModelSelect();
   } catch (e) {
     console.warn("[Profile] Đồng bộ profile từ server bị hoãn:", e);
@@ -1372,6 +1388,9 @@ function openSettingsModal(targetTab = null) {
   }
 
   enableVaultToolsCheck.checked = state.enableVaultTools;
+  if (showChatAvatarsCheck) {
+    showChatAvatarsCheck.checked = !!state.showChatAvatars;
+  }
   ttsRate.value = state.ttsRate;
   ttsRateVal.innerText = state.ttsRate + "x";
 
@@ -1449,6 +1468,12 @@ saveSettingsBtn.onclick = () => {
   state.enableVaultTools = enableVaultToolsCheck.checked;
   state.ttsRate = parseFloat(ttsRate.value);
 
+  if (showChatAvatarsCheck) {
+    state.showChatAvatars = showChatAvatarsCheck.checked;
+    localStorage.setItem("show_chat_avatars", state.showChatAvatars);
+    applyChatAvatarsVisibility();
+  }
+
   localStorage.setItem("username", state.username);
   localStorage.setItem("avatar_user", state.avatarUser);
   localStorage.setItem("avatar_ai", state.avatarAI);
@@ -1472,6 +1497,7 @@ saveSettingsBtn.onclick = () => {
       avatar_user: state.avatarUser,
       avatar_ai: state.avatarAI,
       avatar_target: state.avatarTarget,
+      show_chat_avatars: state.showChatAvatars,
       ai_engine: state.engine,
       gemini_model: state.model,
       tts_rate: state.ttsRate
@@ -1479,7 +1505,7 @@ saveSettingsBtn.onclick = () => {
   }).catch(e => console.warn("[Profile] Lưu profile lên server thất bại:", e));
 
   settingsModal.classList.add("hidden");
-  appendMessage("assistant", `[OK] Đã lưu cài đặt cho người học #${state.username} (User: ${state.avatarUser}, AI: ${state.avatarAI}, Từ mục tiêu: ${state.avatarTarget}).`);
+  appendMessage("assistant", `[OK] Đã lưu cài đặt cho người học #${state.username} (User: ${state.avatarUser}, AI: ${state.avatarAI}, Từ mục tiêu: ${state.avatarTarget}, Avatar chat: ${state.showChatAvatars ? "Bật" : "Tắt"}).`);
 };
 
 ttsRate.oninput = () => {

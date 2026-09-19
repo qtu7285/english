@@ -327,6 +327,15 @@ body {
   margin-right: auto;
 }
 
+.chat-messages.hide-avatars .message-row {
+  max-width: 96%;
+  gap: 0;
+}
+
+.chat-messages.hide-avatars .message-row .avatar {
+  display: none !important;
+}
+
 .avatar {
   width: 34px;
   height: 34px;

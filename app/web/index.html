@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="English AI">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="style.css?v=18">
   <style>
     /* Critical Drawer Shell: ngăn chặn hoàn toàn lỗi vỡ layout khi CSS chưa kịp tải */
     .drawer-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); z-index: 90; backdrop-filter: blur(4px); display: none; }
@@ -188,6 +188,14 @@
               <input type="text" id="customTargetAvatarInput" placeholder="Mặc định là 🎯 (hoặc nhập emoji khác)..." maxlength="8" style="margin-top: 8px;">
               <small class="form-hint">Hiển thị trước từ cần học trong khung chat (ví dụ: 🎯 capable thay vì .capable).</small>
             </div>
+
+            <div class="form-group checkbox-group" style="margin-top: 14px;">
+              <label>
+                <input type="checkbox" id="showChatAvatarsCheck">
+                Hiện avatar trong khung chat
+              </label>
+              <small class="form-hint">Mặc định tắt để tối đa diện tích hiển thị câu và bong bóng chat.</small>
+            </div>
           </div>
 
           <!-- Tab 2: Động cơ AI -->
@@ -340,6 +348,6 @@
     </aside>
   </div>
 
-  <script src="app.js?v=17"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>
