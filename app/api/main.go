@@ -665,6 +665,7 @@ func main() {
 
 	// API Handlers
 	mux.HandleFunc("/api/status", app.handleStatus)
+	mux.HandleFunc("/api/quota", app.handleQuota)
 	mux.HandleFunc("/api/vault/list", app.handleVaultList)
 	mux.HandleFunc("/api/vault/read", app.handleVaultRead)
 	mux.HandleFunc("/api/vault/write", app.handleVaultWrite)

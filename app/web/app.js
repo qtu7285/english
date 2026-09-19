@@ -40,7 +40,8 @@ const state = {
   ttsRate: parseFloat(localStorage.getItem("tts_rate") || "0.9"),
   conversation: [],
   currentVaultPath: "",
-  selectedVaultFile: null
+  selectedVaultFile: null,
+  quota: null
 };
 
 // DOM Elements
@@ -53,6 +54,8 @@ const newChatBtn = document.getElementById("newChatBtn") || document.getElementB
 const clearBtn = newChatBtn;
 const initialAiAvatar = document.getElementById("initialAiAvatar");
 const headerModelSelect = document.getElementById("headerModelSelect");
+const headerModelLabel = document.getElementById("headerModelLabel");
+const headerModelIndicator = document.getElementById("headerModelIndicator");
 
 // Navigation Drawer Elements
 const menuToggleBtn = document.getElementById("menuToggleBtn");
@@ -167,17 +170,81 @@ async function syncUserProfileFromServer(targetUser = null) {
   }
 }
 
-function syncHeaderModelSelect() {
+const MODEL_DISPLAY_NAMES = {
+  "gemini-3.6-flash": "3.6 Flash",
+  "gemini-3.7-flash": "3.7 Flash",
+  "gemini-3.8-flash": "3.8 Flash",
+  "gemini-3.1-pro": "3.1 Pro"
+};
+
+function updateHeaderModelDisplay() {
   if (!headerModelSelect) return;
-  const exists = Array.from(headerModelSelect.options).some(opt => opt.value === state.model);
+  const curModel = state.model || "gemini-3.6-flash";
+  const baseName = MODEL_DISPLAY_NAMES[curModel] || curModel;
+
+  const exists = Array.from(headerModelSelect.options).some(opt => opt.value === curModel);
   if (exists) {
-    headerModelSelect.value = state.model;
+    headerModelSelect.value = curModel;
   } else {
     headerModelSelect.value = "gemini-3.6-flash";
   }
+
+  // Hiển thị gọn trên Header: ví dụ "3.6 Flash (84%)"
+  if (headerModelLabel) {
+    if (state.quota && state.quota.gemini_5h) {
+      headerModelLabel.innerText = `${baseName} (${state.quota.gemini_5h})`;
+    } else {
+      headerModelLabel.innerText = baseName;
+    }
+  }
+
+  // Hiển thị chi tiết trong Dropdown: ví dụ "3.6 Flash (5h: 84% | Tuần: 26%)"
+  if (state.quota) {
+    const q5h = state.quota.gemini_5h || "";
+    const qWeek = state.quota.gemini_week || "";
+    const suffix = (q5h && qWeek) ? ` (5h: ${q5h} | Tuần: ${qWeek})` : (q5h ? ` (${q5h})` : "");
+    Array.from(headerModelSelect.options).forEach(opt => {
+      const b = MODEL_DISPLAY_NAMES[opt.value] || opt.value;
+      opt.text = `${b}${suffix}`;
+    });
+  }
+
+  // Đổi màu chấm trạng thái theo mức % 5h
+  if (headerModelIndicator && state.quota && state.quota.gemini_5h) {
+    const p = parseInt(state.quota.gemini_5h, 10);
+    if (!isNaN(p)) {
+      if (p > 50) {
+        headerModelIndicator.style.backgroundColor = "var(--accent-ok)";
+      } else if (p >= 20) {
+        headerModelIndicator.style.backgroundColor = "#f59e0b";
+      } else {
+        headerModelIndicator.style.backgroundColor = "var(--accent-err)";
+      }
+    }
+  }
 }
+
+function syncHeaderModelSelect() {
+  updateHeaderModelDisplay();
+}
+
+async function fetchQuotaFromServer() {
+  try {
+    const res = await fetch("/api/quota");
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.available) {
+      state.quota = data;
+      updateHeaderModelDisplay();
+    }
+  } catch (e) {
+    console.warn("[Quota] Không thể tải quota:", e);
+  }
+}
+
 syncHeaderModelSelect();
 syncUserProfileFromServer();
+fetchQuotaFromServer();
 
 if (headerModelSelect) {
   headerModelSelect.addEventListener("change", () => {
@@ -196,6 +263,7 @@ if (headerModelSelect) {
     if (modelSelect) {
       modelSelect.value = val;
     }
+    updateHeaderModelDisplay();
   });
 }
 
@@ -1006,6 +1074,7 @@ async function handleSendMessage(msgText) {
       state.conversation.push({ role: "user", text });
       state.conversation.push({ role: "assistant", text: data.text });
       appendMessage("assistant", data.text, data.tool_logs, data);
+      fetchQuotaFromServer();
 
       // Automatic sentence clipboard (per AGENTS.md rule for Tap to Translate)
       const extracted = extractEnglishElements(data.text);

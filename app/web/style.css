@@ -153,20 +153,22 @@ body {
   color: var(--primary);
 }
 
-.header-model-select {
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  border: none;
-  color: inherit;
+.header-model-label {
   font-size: 11px;
   font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  outline: none;
-  padding: 0;
-  margin: 0;
+  color: inherit;
   line-height: 1.2;
+  white-space: nowrap;
+}
+
+.header-model-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .header-model-select option {
