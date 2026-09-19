@@ -89,6 +89,13 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
     2. Siết chặt Pattern 3 chỉ nhận diện câu trích dẫn tiếng Anh có khoảng trắng/đầu dòng phía trước `(?:^|[\s(])["“]...`, tuyệt đối không bao giờ khớp vào thuộc tính HTML sau dấu `=` (`class="..."`, `title="..."`).
   - [x] Nâng cấp Service Worker lên `engtutor-v9` trong [`sw.js`](file:///data/data/com.termux/files/home/storage/shared/LANGUAGE/english/app/web/sw.js).
 
+- [x] **Bước 16: Tối ưu thanh điều hướng Drawer và nút Đoạn chat mới chuẩn UX di động**
+  - [x] Thay thế nút thùng rác xóa dữ liệu bằng nút cây bút ✏️ ("Đoạn chat mới"), khởi tạo phiên học với câu khẩu hiệu đầy cảm hứng và tự động focus ô nhập liệu.
+  - [x] Thêm nút Hamburger `☰` góc trên bên trái mở Navigation Drawer trượt mượt mà.
+  - [x] Chuyển các mục Cài đặt và Thẻ người học (User card với Avatar & Username) xuống đáy Drawer.
+  - [x] Tích hợp các lối tắt thao tác nhanh (`.s`, `.g`, `.help`) bên trong Drawer.
+  - [x] Khắc phục triệt để lỗi hiển thị vỡ layout do cache CSS cũ: di dời markup Drawer xuống đáy trang, bổ sung critical inline CSS bảo vệ trong `<head>`, thêm cache-buster `?v=11`, cập nhật Service Worker `engtutor-v11` và cấu hình HTTP `Cache-Control: no-cache` trên máy chủ Go.
+
 ---
 
 ## 3. Tiêu chuẩn Nghiệm thu
@@ -107,3 +114,5 @@ Tài liệu đặc tả và kế hoạch thực thi từng bước tối ưu gia
 12. [x] Nhãn ngôn ngữ và trạng thái được tự động hiển thị dưới dạng emoji sinh động (🇬🇧, 🇻🇳, ✅, ❌, ⏩...) trên Web UI mà vẫn bảo toàn định dạng văn bản thô an toàn cho CLI Termux.
 13. [x] Cài đặt chia thành các tab chuyên biệt với tab cấu hình Emoji đầy đủ (User, AI, Target Word) và hiển thị từ vựng trong chat dưới dạng `🎯 <từ>` thay vì `.<từ>`.
 14. [x] Triệt tiêu hoàn toàn hiện tượng vỡ mã thẻ HTML `🔊 title="Tiếng Việt">...`; tất cả các huy hiệu emoji và nút phát âm hiển thị nguyên vẹn, chuẩn xác.
+15. [x] Nút cây bút ở góc phải khởi tạo đoạn chat mới mượt mà, thân thiện, không gây cảm giác phá hủy như nút thùng rác.
+16. [x] Menu Hamburger bên trái trượt mượt mà, đầy đủ lối tắt, cài đặt và hồ sơ người học; miễn nhiễm hoàn toàn với lỗi vỡ layout do cache CSS cũ.

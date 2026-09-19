@@ -12,17 +12,33 @@
   <meta name="apple-mobile-web-app-title" content="English AI">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=13">
+  <style>
+    /* Critical Drawer Shell: ngăn chặn hoàn toàn lỗi vỡ layout khi CSS chưa kịp tải */
+    .drawer-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); z-index: 90; backdrop-filter: blur(4px); display: none; }
+    .drawer-backdrop:not(.hidden) { display: block; }
+    .drawer-sidebar { position: fixed; top: 0; bottom: 0; left: 0; width: 290px; max-width: 82vw; background: #1e293b; border-right: 1px solid #475569; z-index: 95; display: flex; flex-direction: column; transform: translateX(-100%); transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 6px 0 28px rgba(0, 0, 0, 0.45); }
+    .drawer-sidebar.open { transform: translateX(0); }
+  </style>
 </head>
 <body>
   <div class="app-container">
     <!-- Top Header -->
     <header class="app-header">
-      <div class="brand">
-        <div class="brand-logo">EN</div>
-        <div class="brand-info">
-          <h1>English Tutor AI</h1>
-          <span class="status-indicator online" id="statusIndicator">Cục bộ</span>
+      <div class="header-left">
+        <button class="icon-btn menu-btn" id="menuToggleBtn" title="Mở menu" aria-label="Mở menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div class="brand">
+          <div class="brand-logo">EN</div>
+          <div class="brand-info">
+            <h1>English Tutor AI</h1>
+            <span class="status-indicator online" id="statusIndicator">Cục bộ</span>
+          </div>
         </div>
       </div>
       <div class="header-actions">
@@ -34,16 +50,10 @@
           </svg>
           <span class="btn-label">Cài đặt</span>
         </button>
-        <button class="icon-btn" id="settingsBtn" title="Cài đặt API">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-        </button>
-        <button class="icon-btn" id="clearBtn" title="Xóa lịch sử chat">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <button class="icon-btn" id="newChatBtn" title="Đoạn chat mới" aria-label="Đoạn chat mới">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
           </svg>
         </button>
       </div>
@@ -85,7 +95,7 @@
       <form class="input-form" id="chatForm">
         <textarea
           id="messageInput"
-          placeholder="Nhập từ cần học..."
+          placeholder="Nhập từ cần học (hoặc .từ_mới)..."
           rows="1"
           required
         ></textarea>
@@ -225,9 +235,99 @@
       </div>
     </div>
 
+    <!-- Navigation Drawer Backdrop -->
+    <div class="drawer-backdrop hidden" id="drawerBackdrop"></div>
 
+    <!-- Navigation Drawer Sidebar -->
+    <aside class="drawer-sidebar" id="drawerSidebar" aria-label="Menu điều hướng">
+      <div class="drawer-header">
+        <div class="drawer-brand">
+          <div class="brand-logo">EN</div>
+          <div>
+            <h3>English Tutor</h3>
+            <span class="drawer-sub">Gia sư Anh ngữ AI</span>
+          </div>
+        </div>
+        <button class="icon-btn drawer-close-btn" id="drawerCloseBtn" title="Đóng menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <button class="drawer-new-chat-btn" id="drawerNewChatBtn" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          <span>Đoạn chat mới</span>
+        </button>
+
+        <div class="drawer-section-title">Lối tắt thao tác</div>
+        <div class="drawer-nav-list">
+          <button class="drawer-nav-item" id="navSaveBtn" type="button">
+            <span class="nav-icon">💾</span>
+            <div class="nav-info">
+              <span class="nav-title">Lưu tiến độ (.s)</span>
+              <span class="nav-desc">Lưu bài học & từ vựng đủ điều kiện</span>
+            </div>
+          </button>
+          <button class="drawer-nav-item" id="navGitBtn" type="button">
+            <span class="nav-icon">🔄</span>
+            <div class="nav-info">
+              <span class="nav-title">Đồng bộ Git (.g)</span>
+              <span class="nav-desc">Commit và đẩy dữ liệu lên GitHub</span>
+            </div>
+          </button>
+          <button class="drawer-nav-item" id="navBugFixB5Btn" type="button">
+            <span class="nav-icon">📱</span>
+            <div class="nav-info">
+              <span class="nav-title">Sửa lỗi UI m55 (.b5)</span>
+              <span class="nav-desc">Tự quét ảnh m55 và sửa lỗi</span>
+            </div>
+          </button>
+          <button class="drawer-nav-item" id="navBugFixB6Btn" type="button">
+            <span class="nav-icon">🛠️</span>
+            <div class="nav-info">
+              <span class="nav-title">Sửa lỗi UI zf6 (.b6)</span>
+              <span class="nav-desc">Tự quét ảnh zf6 và sửa lỗi</span>
+            </div>
+          </button>
+          <button class="drawer-nav-item" id="navHelpBtn" type="button">
+            <span class="nav-icon">❓</span>
+            <div class="nav-info">
+              <span class="nav-title">Trợ giúp lệnh (.help)</span>
+              <span class="nav-desc">Xem hướng dẫn các lệnh trong app</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button class="drawer-footer-item" id="drawerSettingsBtn" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Cài đặt ứng dụng</span>
+        </button>
+
+        <button class="drawer-user-card" id="drawerUserCard" type="button" title="Quản lý hồ sơ & Emoji người học">
+          <div class="user-avatar-badge" id="drawerUserAvatar">🧑‍🎓</div>
+          <div class="user-info-text">
+            <span class="user-name" id="drawerUserName">qtu</span>
+            <span class="user-badge">Người học • Emoji & Hồ sơ</span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="user-chevron">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </aside>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>

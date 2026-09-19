@@ -639,6 +639,9 @@ func main() {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
+		if strings.HasSuffix(r.URL.Path, ".html") || r.URL.Path == "/" || strings.HasSuffix(r.URL.Path, ".css") || strings.HasSuffix(r.URL.Path, ".js") {
+			w.Header().Set("Cache-Control", "no-cache, must-revalidate")
+		}
 		fileServer.ServeHTTP(w, r)
 	}))
 

@@ -48,10 +48,27 @@ const chatMessages = document.getElementById("chatMessages");
 const chatForm = document.getElementById("chatForm");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
-const clearBtn = document.getElementById("clearBtn");
+const newChatBtn = document.getElementById("newChatBtn") || document.getElementById("clearBtn");
+const clearBtn = newChatBtn;
 const initialAiAvatar = document.getElementById("initialAiAvatar");
 
-const settingsBtn = document.getElementById("settingsBtn");
+// Navigation Drawer Elements
+const menuToggleBtn = document.getElementById("menuToggleBtn");
+const drawerBackdrop = document.getElementById("drawerBackdrop");
+const drawerSidebar = document.getElementById("drawerSidebar");
+const drawerCloseBtn = document.getElementById("drawerCloseBtn");
+const drawerNewChatBtn = document.getElementById("drawerNewChatBtn");
+const drawerSettingsBtn = document.getElementById("drawerSettingsBtn");
+const drawerUserCard = document.getElementById("drawerUserCard");
+const drawerUserAvatar = document.getElementById("drawerUserAvatar");
+const drawerUserName = document.getElementById("drawerUserName");
+const navSaveBtn = document.getElementById("navSaveBtn");
+const navGitBtn = document.getElementById("navGitBtn");
+const navBugFixB5Btn = document.getElementById("navBugFixB5Btn");
+const navBugFixB6Btn = document.getElementById("navBugFixB6Btn") || document.getElementById("navBugFixBtn");
+const navHelpBtn = document.getElementById("navHelpBtn");
+
+const settingsBtn = document.getElementById("settingsBtn") || drawerSettingsBtn;
 const settingsModal = document.getElementById("settingsModal");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
@@ -95,6 +112,12 @@ function updateExistingAvatarsInChat() {
   document.querySelectorAll(".message-row.user .avatar").forEach(av => {
     av.innerText = state.avatarUser || "🧑‍🎓";
   });
+  if (drawerUserAvatar) {
+    drawerUserAvatar.innerText = state.avatarUser || "🧑‍🎓";
+  }
+  if (drawerUserName) {
+    drawerUserName.innerText = state.username || "qtu";
+  }
 }
 
 // Đồng bộ hồ sơ người dùng từ USERS/<username>/profile.json trên máy chủ
@@ -346,7 +369,7 @@ function updateDynamicChoices(choices) {
   updateQuickChipsVisibility();
 }
 
-// Update dynamic context chips (e.g. '3 câu luyện', '5 câu luyện') based on tutoring flow
+// Update dynamic context chips (e.g. 'Luyện 3 câu', 'Luyện 5 câu') based on tutoring flow
 function updateContextChips(lastText) {
   const container = document.getElementById("dynamicContextChips");
   if (!container) return;
@@ -354,6 +377,7 @@ function updateContextChips(lastText) {
 
   if (!lastText) {
     // Trang thai ban dau: an toan bo chip de giu giao dien gon gang
+    if (messageInput) messageInput.placeholder = "Nhập từ cần học (hoặc .từ_mới)...";
     updateQuickChipsVisibility();
     return;
   }
@@ -362,6 +386,7 @@ function updateContextChips(lastText) {
   const isQuestion = /Câu\s+\d+\/\d+|\[D[1-3]\]|_{2,}/i.test(lastText) && !/Hoàn thành \d+\/\d+ câu/i.test(lastText);
   if (isQuestion) {
     // Dang lam test: AN TOAN BO nut chon so cau de tranh hoc vien bam nham lam hong bai test!
+    if (messageInput) messageInput.placeholder = "Nhập đáp án (A, B, C, D hoặc từ điền)...";
     updateQuickChipsVisibility();
     return;
   }
@@ -369,6 +394,7 @@ function updateContextChips(lastText) {
   // Kiem tra neu vua hoan thanh vong luyen tap
   const isCompleted = /Hoàn thành \d+\/\d+ câu/i.test(lastText);
   if (isCompleted) {
+    if (messageInput) messageInput.placeholder = "Nhập số câu luyện tiếp hoặc .từ_mới...";
     const chip3 = document.createElement("button");
     chip3.type = "button";
     chip3.className = "chip";
@@ -390,31 +416,33 @@ function updateContextChips(lastText) {
   // Kiem tra neu AI vua giai nghia xong tu vung (xuat hien dong [NEXT] Nhap so cau de luyen)
   const hasNextTestPrompt = /\[NEXT\]\s*Nhập số câu|số câu để luyện/i.test(lastText);
   if (hasNextTestPrompt) {
+    if (messageInput) messageInput.placeholder = "Nhập số câu cần luyện hoặc yêu cầu khác...";
     const chip3 = document.createElement("button");
     chip3.type = "button";
     chip3.className = "chip";
     chip3.setAttribute("data-send", "3");
-    chip3.innerText = "3 câu luyện";
+    chip3.innerText = "Luyện 3 câu";
     container.appendChild(chip3);
 
     const chip5 = document.createElement("button");
     chip5.type = "button";
     chip5.className = "chip";
     chip5.setAttribute("data-send", "5");
-    chip5.innerText = "5 câu luyện";
+    chip5.innerText = "Luyện 5 câu";
     container.appendChild(chip5);
 
     const chip10 = document.createElement("button");
     chip10.type = "button";
     chip10.className = "chip";
     chip10.setAttribute("data-send", "10");
-    chip10.innerText = "10 câu";
+    chip10.innerText = "Luyện 10 câu";
     container.appendChild(chip10);
 
     updateQuickChipsVisibility();
     return;
   }
 
+  if (messageInput) messageInput.placeholder = "Nhập từ cần học (hoặc .từ_mới)...";
   updateQuickChipsVisibility();
 }
 
@@ -507,6 +535,9 @@ function renderMarkdown(text) {
   html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
   html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
 
+  // Horizontal rules (---, ***, ___ on a single line)
+  html = html.replace(/^(?:---|\*\*\*|___)\s*$/gim, '<hr class="bubble-divider">');
+
   // Status Badges & Emojis
   html = html.replace(/\[EN\](?::)?/g, '<span class="badge badge-en" title="Tiếng Anh">🇬🇧</span>');
   html = html.replace(/\[VI\](?::)?/g, '<span class="badge badge-vi" title="Tiếng Việt">🇻🇳</span>');
@@ -530,7 +561,13 @@ function renderMarkdown(text) {
   html = html.replace(/\n\n+/g, '</p><p>');
   html = html.replace(/\n/g, '<br>');
 
-  return `<p>${html}</p>`;
+  html = `<p>${html}</p>`;
+  html = html.replace(/<p>\s*(<hr[^>]*>)\s*<\/p>/gi, '$1');
+  html = html.replace(/<p>\s*<br\s*\/?>/gi, '<p>');
+  html = html.replace(/<br\s*\/?>\s*<\/p>/gi, '</p>');
+  html = html.replace(/<p>\s*<\/p>/g, '');
+
+  return html;
 }
 
 // Speech Synthesis (Audio Pronunciation) with Android Chrome fix
@@ -672,7 +709,7 @@ function appendMessage(role, text, toolLogs = []) {
     if (headwordMatch && !controlCmds.includes(headwordMatch[1].toLowerCase())) {
       const targetEmoji = state.avatarTarget || "🎯";
       const word = headwordMatch[1];
-      content.innerHTML = `<span class="badge badge-target" title="Từ mục tiêu">${targetEmoji}</span> <strong>${escapeHtml(word)}</strong>`;
+      content.innerHTML = `<span class="target-headword"><span class="target-icon" title="Từ mục tiêu">${targetEmoji}</span> <strong>${escapeHtml(word)}</strong></span>`;
     } else {
       content.innerHTML = renderMarkdown(text);
     }
@@ -1026,15 +1063,105 @@ if (quickChipsBar) {
   });
 }
 
-// Clear Chat
-clearBtn.onclick = () => {
-  if (confirm("Bạn có muốn xóa toàn bộ lịch sử trò chuyện hiện tại không?")) {
-    chatMessages.innerHTML = "";
-    state.conversation = [];
-    updateDynamicChoices([]);
-    updateContextChips("");
+// Quản lý Navigation Drawer
+function openDrawer() {
+  triggerHaptic(15);
+  if (drawerSidebar) drawerSidebar.classList.add("open");
+  if (drawerBackdrop) drawerBackdrop.classList.remove("hidden");
+}
+
+function closeDrawer() {
+  if (drawerSidebar) drawerSidebar.classList.remove("open");
+  if (drawerBackdrop) drawerBackdrop.classList.add("hidden");
+}
+
+if (menuToggleBtn) menuToggleBtn.onclick = openDrawer;
+if (drawerCloseBtn) drawerCloseBtn.onclick = closeDrawer;
+if (drawerBackdrop) drawerBackdrop.onclick = closeDrawer;
+
+// Đóng drawer khi nhấn phím Escape
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && drawerSidebar && drawerSidebar.classList.contains("open")) {
+    closeDrawer();
   }
-};
+});
+
+// Khởi tạo đoạn chat mới (New Chat)
+function startNewChat() {
+  triggerHaptic(20);
+  closeDrawer();
+  chatMessages.innerHTML = `
+    <div class="message-row assistant">
+      <div class="avatar" id="initialAiAvatar">${state.avatarAI || "🤖"}</div>
+      <div class="bubble">
+        <div class="bubble-content">
+          <p style="font-weight: 700; color: #38bdf8; line-height: 1.6; font-size: 15px;">
+            🔥 Đam mê Anh luyện.<br>
+            ⏱️ Không sót 1 phút.<br>
+            📖 Không sót 1 từ.<br>
+            💎 Điêu luyện rộng sâu.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+  state.conversation = [];
+  updateDynamicChoices([]);
+  updateContextChips("");
+  if (messageInput) {
+    messageInput.value = "";
+    messageInput.focus();
+  }
+}
+
+if (newChatBtn) newChatBtn.onclick = startNewChat;
+if (drawerNewChatBtn) drawerNewChatBtn.onclick = startNewChat;
+
+// Lối tắt nhanh trong Drawer
+if (navSaveBtn) {
+  navSaveBtn.onclick = () => {
+    triggerHaptic(15);
+    closeDrawer();
+    messageInput.value = ".s";
+    chatForm.dispatchEvent(new Event("submit"));
+  };
+}
+
+if (navGitBtn) {
+  navGitBtn.onclick = () => {
+    triggerHaptic(15);
+    closeDrawer();
+    messageInput.value = ".g";
+    chatForm.dispatchEvent(new Event("submit"));
+  };
+}
+
+if (navBugFixB5Btn) {
+  navBugFixB5Btn.onclick = () => {
+    triggerHaptic(15);
+    closeDrawer();
+    messageInput.value = ".b5";
+    chatForm.dispatchEvent(new Event("submit"));
+  };
+}
+
+if (navBugFixB6Btn) {
+  navBugFixB6Btn.onclick = () => {
+    triggerHaptic(15);
+    closeDrawer();
+    messageInput.value = ".b6";
+    chatForm.dispatchEvent(new Event("submit"));
+  };
+}
+
+if (navHelpBtn) {
+  navHelpBtn.onclick = () => {
+    triggerHaptic(15);
+    closeDrawer();
+    messageInput.value = ".help";
+    chatForm.dispatchEvent(new Event("submit"));
+  };
+}
 
 // Settings Modal Handlers
 function updateEngineUI() {
@@ -1138,7 +1265,9 @@ if (testVoiceBtn) {
   };
 }
 
-settingsBtn.onclick = () => {
+function openSettingsModal(targetTab = null) {
+  triggerHaptic(15);
+  closeDrawer();
   if (usernameInput) usernameInput.value = state.username || "qtu";
 
   // Đồng bộ picker Avatar User
@@ -1207,8 +1336,30 @@ settingsBtn.onclick = () => {
   enableVaultToolsCheck.checked = state.enableVaultTools;
   ttsRate.value = state.ttsRate;
   ttsRateVal.innerText = state.ttsRate + "x";
+
+  if (targetTab && settingsTabs) {
+    settingsTabs.querySelectorAll(".modal-tab-btn").forEach(b => {
+      if (b.getAttribute("data-tab") === targetTab) {
+        b.classList.add("active");
+      } else {
+        b.classList.remove("active");
+      }
+    });
+    document.querySelectorAll("#settingsModal .tab-content").forEach(c => {
+      if (c.id === targetTab) {
+        c.classList.add("active");
+      } else {
+        c.classList.remove("active");
+      }
+    });
+  }
+
   settingsModal.classList.remove("hidden");
-};
+}
+
+if (settingsBtn) settingsBtn.onclick = () => openSettingsModal();
+if (drawerSettingsBtn) drawerSettingsBtn.onclick = () => openSettingsModal();
+if (drawerUserCard) drawerUserCard.onclick = () => openSettingsModal("tab-emoji");
 
 closeSettingsBtn.onclick = () => settingsModal.classList.add("hidden");
 

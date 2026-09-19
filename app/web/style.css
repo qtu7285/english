@@ -77,6 +77,21 @@ body {
   z-index: 10;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu-btn {
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -147,6 +162,9 @@ body {
     padding-top: max(8px, env(safe-area-inset-top, 8px));
     padding-left: max(12px, env(safe-area-inset-left, 12px));
     padding-right: max(12px, env(safe-area-inset-right, 12px));
+  }
+  .header-left {
+    gap: 8px;
   }
   .brand {
     gap: 8px;
@@ -327,6 +345,14 @@ body {
   margin: 8px 0;
 }
 
+.bubble-content hr,
+.bubble-divider {
+  border: none;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  margin: 12px 0;
+  width: 100%;
+}
+
 .badge-list {
   display: flex;
   flex-wrap: wrap;
@@ -363,11 +389,25 @@ body {
 }
 
 .badge-target {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  padding: 0;
+  margin-right: 4px;
+}
+
+.target-headword {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 15px;
-  padding: 1px 5px;
-  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.target-icon {
+  font-size: 16px;
+  line-height: 1;
+  display: inline-block;
 }
 
 .badge-ok, .badge-tool {
@@ -641,6 +681,8 @@ body {
 /* Quick Chips */
 .quick-chips {
   display: flex;
+  justify-content: center;
+  justify-content: safe center;
   gap: 8px;
   padding: 6px 16px;
   overflow-x: auto;
@@ -1202,4 +1244,257 @@ body {
   text-align: center;
   margin-top: 40px;
   font-style: italic;
+}
+
+/* Navigation Drawer (Sidebar) */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 90;
+  backdrop-filter: blur(4px);
+  transition: opacity 0.25s ease;
+  opacity: 1;
+}
+
+.drawer-backdrop.hidden {
+  display: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.drawer-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 290px;
+  max-width: 82vw;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-color);
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 6px 0 28px rgba(0, 0, 0, 0.45);
+  padding-top: max(14px, env(safe-area-inset-top, 14px));
+  padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
+}
+
+.drawer-sidebar.open {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.drawer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawer-brand h3 {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.drawer-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.drawer-close-btn {
+  padding: 6px;
+  border-radius: 8px;
+  color: var(--text-muted);
+}
+
+.drawer-close-btn:hover {
+  color: var(--text-main);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.drawer-new-chat-btn {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: var(--primary);
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.drawer-new-chat-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.drawer-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  padding-left: 4px;
+}
+
+.drawer-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.drawer-nav-item {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-main);
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+  width: 100%;
+}
+
+.drawer-nav-item:hover {
+  background: var(--bg-input);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.drawer-nav-item .nav-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.drawer-nav-item .nav-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drawer-nav-item .nav-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.drawer-nav-item .nav-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.drawer-footer {
+  padding: 12px 14px 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-footer-item {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s;
+}
+
+.drawer-footer-item:hover {
+  background: var(--bg-input);
+}
+
+.drawer-user-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.drawer-user-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.user-avatar-badge {
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.user-info-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.user-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-badge {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.user-chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
