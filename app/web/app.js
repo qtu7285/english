@@ -370,20 +370,20 @@ function updateDynamicChoices(choices) {
 }
 
 // Update dynamic context chips (e.g. 'Luyện 3 câu', 'Luyện 5 câu') based on tutoring flow
-function updateContextChips(lastText) {
+function updateContextChips(lastText, resType = "") {
   const container = document.getElementById("dynamicContextChips");
   if (!container) return;
   container.innerHTML = "";
 
-  if (!lastText) {
+  if (!lastText && !resType) {
     // Trang thai ban dau: an toan bo chip de giu giao dien gon gang
-    if (messageInput) messageInput.placeholder = "Nhập từ cần học (hoặc .từ_mới)...";
+    if (messageInput) messageInput.placeholder = "Nhập từ cần học...";
     updateQuickChipsVisibility();
     return;
   }
 
   // Kiem tra neu dang trong mot cau hoi luyen tap (Cau 1/N, Cau 2/N...)
-  const isQuestion = /Câu\s+\d+\/\d+|\[D[1-3]\]|_{2,}/i.test(lastText) && !/Hoàn thành \d+\/\d+ câu/i.test(lastText);
+  const isQuestion = resType === "test_question" || (/Câu\s+\d+\/\d+|\[D[1-3]\]|_{2,}/i.test(lastText) && !/Hoàn thành \d+\/\d+ câu/i.test(lastText));
   if (isQuestion) {
     // Dang lam test: AN TOAN BO nut chon so cau de tranh hoc vien bam nham lam hong bai test!
     if (messageInput) messageInput.placeholder = "Nhập đáp án (A, B, C, D hoặc từ điền)...";
@@ -392,9 +392,9 @@ function updateContextChips(lastText) {
   }
 
   // Kiem tra neu vua hoan thanh vong luyen tap
-  const isCompleted = /Hoàn thành \d+\/\d+ câu/i.test(lastText);
+  const isCompleted = resType === "round_completed" || /Hoàn thành \d+\/\d+ câu/i.test(lastText);
   if (isCompleted) {
-    if (messageInput) messageInput.placeholder = "Nhập số câu luyện tiếp hoặc .từ_mới...";
+    if (messageInput) messageInput.placeholder = "Nhập số câu luyện tiếp hoặc từ mới...";
     const chip3 = document.createElement("button");
     chip3.type = "button";
     chip3.className = "chip";
@@ -414,7 +414,7 @@ function updateContextChips(lastText) {
   }
 
   // Kiem tra neu AI vua giai nghia xong tu vung (xuat hien dong [NEXT] Nhap so cau de luyen)
-  const hasNextTestPrompt = /\[NEXT\]\s*Nhập số câu|số câu để luyện/i.test(lastText);
+  const hasNextTestPrompt = resType === "word_explanation" || /\[NEXT\]\s*Nhập số câu|số câu để luyện/i.test(lastText);
   if (hasNextTestPrompt) {
     if (messageInput) messageInput.placeholder = "Nhập số câu cần luyện hoặc yêu cầu khác...";
     const chip3 = document.createElement("button");
@@ -442,7 +442,7 @@ function updateContextChips(lastText) {
     return;
   }
 
-  if (messageInput) messageInput.placeholder = "Nhập từ cần học (hoặc .từ_mới)...";
+  if (messageInput) messageInput.placeholder = "Nhập từ cần học...";
   updateQuickChipsVisibility();
 }
 
@@ -534,6 +534,9 @@ function renderMarkdown(text) {
   html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
   html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
   html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+  // Auto divider before "Ví dụ:" or "Example:" if not preceded by --- or <hr>
+  html = html.replace(/(?:^|\n)(?!---+|\*\*\*+|___+|<hr[^>]*>)(?:[-*•]\s*)?(?:###?\s*)?(Ví dụ:|Example:)/gim, '\n---\n$1');
 
   // Horizontal rules (---, ***, ___ on a single line)
   html = html.replace(/^(?:---|\*\*\*|___)\s*$/gim, '<hr class="bubble-divider">');
@@ -689,7 +692,7 @@ async function copyToClipboard(text, btnElement) {
 }
 
 // Append message to UI
-function appendMessage(role, text, toolLogs = []) {
+function appendMessage(role, text, toolLogs = [], metadata = {}) {
   const row = document.createElement("div");
   row.className = `message-row ${role}`;
 
@@ -748,27 +751,29 @@ function appendMessage(role, text, toolLogs = []) {
     } else {
       updateDynamicChoices([]);
     }
-    updateContextChips(text);
+    updateContextChips(text, metadata.type || "");
 
     // 2. Audio & Copy action buttons
     const extracted = extractEnglishElements(text);
-    if (extracted.word || extracted.sentences.length > 0) {
+    const targetWord = metadata.target_word || extracted.word;
+    const mainSentence = metadata.audio_sentence || (extracted.sentences.length > 0 ? extracted.sentences[0] : "");
+
+    if (targetWord || mainSentence) {
       const actions = document.createElement("div");
       actions.className = "bubble-actions";
 
       // 1. Target word button
-      if (extracted.word) {
+      if (targetWord) {
         const wordBtn = document.createElement("button");
         wordBtn.type = "button";
         wordBtn.className = "btn-action speak-btn";
-        wordBtn.setAttribute("data-text", extracted.word);
-        wordBtn.innerHTML = `🔊 Từ: <strong>${escapeHtml(extracted.word)}</strong>`;
+        wordBtn.setAttribute("data-text", targetWord);
+        wordBtn.innerHTML = `🔊 Từ: <strong>${escapeHtml(targetWord)}</strong>`;
         actions.appendChild(wordBtn);
       }
 
       // 2. Main sentence button
-      if (extracted.sentences.length > 0) {
-        const mainSentence = extracted.sentences[0];
+      if (mainSentence) {
         const sentBtn = document.createElement("button");
         sentBtn.type = "button";
         sentBtn.className = "btn-action speak-btn";
@@ -951,7 +956,7 @@ async function handleSendMessage(msgText) {
     } else {
       state.conversation.push({ role: "user", text });
       state.conversation.push({ role: "assistant", text: data.text });
-      appendMessage("assistant", data.text, data.tool_logs);
+      appendMessage("assistant", data.text, data.tool_logs, data);
 
       // Automatic sentence clipboard (per AGENTS.md rule for Tap to Translate)
       const extracted = extractEnglishElements(data.text);

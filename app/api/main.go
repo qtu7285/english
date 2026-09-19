@@ -24,8 +24,9 @@ Rules:
    - Provide meaning in Vietnamese
    - Part of speech
    - Common usage/collocations
+   - A horizontal divider (---) to cleanly separate theory from practice
    - A short natural English example with Vietnamese meaning
-   - End with: [NEXT] Nhập số câu để luyện (ví dụ 5), hoặc .từ_mới để chuyển từ.
+   - End with: [NEXT] Nhập số câu để luyện (ví dụ 5), hoặc nhập từ mới để chuyển từ.
 
 2. Explaining a sentence:
    - Natural Vietnamese meaning
@@ -386,6 +387,41 @@ func (s *ServerApp) handleVaultSearch(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func ClassifyResponse(text string, userMsg string) (string, string, string) {
+	cleanMsg := strings.TrimSpace(userMsg)
+	// 1. Test question: Câu 1/5, Câu 2/N, [D1], [D2], [D3] with blanks
+	if (regexp.MustCompile(`(?i)Câu\s+\d+/\d+`).MatchString(text) || regexp.MustCompile(`\[D[1-3]\]`).MatchString(text) || strings.Contains(text, "___")) && !regexp.MustCompile(`(?i)Hoàn thành \d+/\d+ câu`).MatchString(text) {
+		return "test_question", "", ""
+	}
+
+	// 2. Round completed
+	if regexp.MustCompile(`(?i)Hoàn thành \d+/\d+ câu`).MatchString(text) {
+		return "round_completed", "", ""
+	}
+
+	// 3. Word explanation: has [NEXT] Nhập số câu... or starts with headword pattern
+	if regexp.MustCompile(`(?i)\[NEXT\]\s*Nhập số câu|số câu để luyện`).MatchString(text) {
+		targetWord := ""
+		if strings.HasPrefix(cleanMsg, ".") && len(cleanMsg) > 1 {
+			targetWord = strings.TrimPrefix(cleanMsg, ".")
+		}
+		if targetWord == "" {
+			m := regexp.MustCompile(`(?m)^\s*(?:\*\*)?([A-Za-z][A-Za-z\s\-]{1,29})(?:\*\*)?\s*(?:/|\[audio:)`).FindStringSubmatch(text)
+			if len(m) > 1 {
+				targetWord = strings.TrimSpace(m[1])
+			}
+		}
+		return "word_explanation", targetWord, ""
+	}
+
+	// 4. Test evaluation: [OK], [X], [~]
+	if regexp.MustCompile(`\[OK\]|\[X\]|\[~\]|\[RETRY\]`).MatchString(text) {
+		return "test_evaluation", "", ""
+	}
+
+	return "chat", "", ""
+}
+
 func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Engine            string                   `json:"engine"`
@@ -436,17 +472,22 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 			sendError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		resType, targetWord, audioSent := ClassifyResponse(reply, msg)
 		sendJSON(w, http.StatusOK, map[string]interface{}{
-			"text":      reply,
-			"tool_logs": []interface{}{},
-			"engine":    "antigravity",
+			"type":           resType,
+			"target_word":    targetWord,
+			"audio_sentence": audioSent,
+			"text":           reply,
+			"tool_logs":      []interface{}{},
+			"engine":         "antigravity",
 		})
 		return
 	}
 
 	if apiKey == "" {
 		sendJSON(w, http.StatusOK, map[string]interface{}{
-			"text": "[~] Chưa cấu hình Google API Key hoặc Antigravity CLI.\n\nBạn có 2 lựa chọn trong Cài đặt (⚙):\n1. Chọn động cơ 'Antigravity CLI (Termux Pro)' để dùng trực tiếp tài khoản Pro trên máy Termux (không cần API Key).\n2. Hoặc nhập Google Gemini API Key (miễn phí tại https://aistudio.google.com/apikey).",
+			"type":      "chat",
+			"text":      "[~] Chưa cấu hình Google API Key hoặc Antigravity CLI.\n\nBạn có 2 lựa chọn trong Cài đặt (⚙):\n1. Chọn động cơ 'Antigravity CLI (Termux Pro)' để dùng trực tiếp tài khoản Pro trên máy Termux (không cần API Key).\n2. Hoặc nhập Google Gemini API Key (miễn phí tại https://aistudio.google.com/apikey).",
 			"tool_logs": []interface{}{},
 		})
 		return
@@ -513,7 +554,15 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sendJSON(w, http.StatusOK, result)
+	resType, targetWord, audioSent := ClassifyResponse(result.Text, msg)
+	sendJSON(w, http.StatusOK, map[string]interface{}{
+		"type":           resType,
+		"target_word":    targetWord,
+		"audio_sentence": audioSent,
+		"text":           result.Text,
+		"tool_logs":      result.ToolLogs,
+		"engine":         "gemini",
+	})
 }
 
 func getTailscaleIP() string {

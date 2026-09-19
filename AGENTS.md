@@ -50,7 +50,7 @@ Use native pronunciation/audio when available. Otherwise use the pronunciation f
 
 After finishing a word/phrase or `.headword` explanation, when no test answer is pending and no test count has already been requested, end with this single line:
 
-[NEXT] Nhập số câu để luyện (ví dụ `5`), hoặc `.từ_mới` để chuyển từ.
+[NEXT] Nhập số câu để luyện (ví dụ `5`), hoặc nhập từ mới để chuyển từ.
 
 This reminder uses only the visible target and temporary session state; do not load canonical/learner files merely to show it. Wait for the learner's choice, then route an actual test request or target switch through the existing rules. Do not append it to pending test questions, correction/re-entry prompts, or unrelated technical/configuration replies.
 

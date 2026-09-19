@@ -116,3 +116,14 @@ Ghi chú:
 * **Luyện tập từng câu một:** Khi chọn 3 câu hoặc 5 câu, hệ thống hiển thị từng câu (Câu 1/N) để bạn trả lời, chấm điểm xong mới chuyển sang câu kế tiếp.
 * **Tương tác trực tiếp với Vault & WORDS:** Tự động đọc danh sách từ vựng, tìm kiếm và chèn ghi chú.
 * **Hỗ trợ đa mô hình:** Gemini 3.6 Flash, 3.7 Flash, 3.8 Flash, 2.0 Flash, 1.5 Flash và tuỳ chỉnh.
+
+---
+
+## 5. Đặc tả API & Hợp đồng Dữ liệu (API Specification)
+
+Xem chi tiết tài liệu kiến trúc và đặc tả hợp đồng dữ liệu giữa Backend (Go/AI) và Frontend tại:
+[`app/API-SPEC.md`](file:///storage/emulated/0/LANGUAGE/english/app/API-SPEC.md)
+
+* **Tách biệt Dữ liệu và Hiển thị:** Backend cung cấp dữ liệu có cấu trúc (`type`, `target_word`, `audio_sentence`), Frontend toàn quyền xử lý bố cục giao diện.
+* **Định danh `type` phản hồi:** `word_explanation`, `test_question`, `test_evaluation`, `round_completed`, `chat`.
+* **Hợp đồng Semantic Markdown:** Giữ trường `text` sạch sẽ, đọc mượt mà trên Termux CLI.
