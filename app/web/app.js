@@ -64,6 +64,9 @@ const drawerAiQuota5h = document.getElementById("drawerAiQuota5h");
 const drawerAiQuotaWeek = document.getElementById("drawerAiQuotaWeek");
 const adminUsersSection = document.getElementById("adminUsersSection");
 const adminUsersList = document.getElementById("adminUsersList");
+const drawerSwitchAccountBtn = document.getElementById("drawerSwitchAccountBtn");
+const antigravityAccountsGroup = document.getElementById("antigravityAccountsGroup");
+const savedAccountsList = document.getElementById("savedAccountsList");
 
 // Navigation Drawer Elements
 const menuToggleBtn = document.getElementById("menuToggleBtn");
@@ -892,12 +895,12 @@ function appendMessage(role, text, toolLogs = [], metadata = {}) {
     }
     updateContextChips(text, metadata.type || "");
 
-    // 2. Audio & Copy action buttons
+    // 2. Audio, Copy & Retry action buttons
     const extracted = extractEnglishElements(text);
     const targetWord = metadata.target_word || extracted.word;
     const mainSentence = metadata.audio_sentence || (extracted.sentences.length > 0 ? extracted.sentences[0] : "");
 
-    if (targetWord || mainSentence) {
+    if (targetWord || mainSentence || metadata.retryText) {
       const actions = document.createElement("div");
       actions.className = "bubble-actions";
 
@@ -926,6 +929,20 @@ function appendMessage(role, text, toolLogs = [], metadata = {}) {
         copyBtn.setAttribute("data-text", mainSentence);
         copyBtn.innerHTML = `📋 Chép câu`;
         actions.appendChild(copyBtn);
+      }
+
+      // 3. Retry button for errors
+      if (metadata.retryText) {
+        const retryBtn = document.createElement("button");
+        retryBtn.type = "button";
+        retryBtn.className = "btn-action retry-btn";
+        retryBtn.innerHTML = `🔄 Thử lại`;
+        retryBtn.onclick = () => {
+          triggerHaptic(20);
+          row.remove();
+          handleSendMessage(metadata.retryText, true);
+        };
+        actions.appendChild(retryBtn);
       }
 
       bubble.appendChild(actions);
@@ -1035,7 +1052,7 @@ function isQuestionPending() {
 }
 
 // Send Message Handler
-async function handleSendMessage(msgText) {
+async function handleSendMessage(msgText, isRetry = false) {
   let text = (msgText || messageInput.value).trim();
   if (!text) return;
 
@@ -1066,8 +1083,10 @@ async function handleSendMessage(msgText) {
   // Prior history (before this current turn)
   const priorHistory = state.conversation.slice(-10);
 
-  // Add user bubble in UI
-  appendMessage("user", text);
+  // Add user bubble in UI (skip if retrying)
+  if (!isRetry) {
+    appendMessage("user", text);
+  }
 
   // Show lively loading indicator (no technical/Termux narration)
   const loadingIndicator = createLoadingIndicator();
@@ -1091,7 +1110,7 @@ async function handleSendMessage(msgText) {
     loadingIndicator.remove();
 
     if (data.error) {
-      appendMessage("assistant", `[X] Lỗi: ${data.error}`);
+      appendMessage("assistant", `[X] Lỗi: ${data.error}`, [], { retryText: text });
     } else {
       state.conversation.push({ role: "user", text });
       state.conversation.push({ role: "assistant", text: data.text });
@@ -1106,7 +1125,7 @@ async function handleSendMessage(msgText) {
     }
   } catch (err) {
     loadingIndicator.remove();
-    appendMessage("assistant", `[X] Lỗi kết nối: ${err.message}`);
+    appendMessage("assistant", `[X] Lỗi kết nối: ${err.message}`, [], { retryText: text });
   } finally {
     sendBtn.disabled = false;
   }
@@ -1495,6 +1514,16 @@ function openSettingsModal(targetTab = null) {
     }
   }
 
+  // Hiển thị khu vực quản lý tài khoản Google cho Admin
+  if (antigravityAccountsGroup) {
+    if (state.role === "admin" || state.username === "qtu") {
+      antigravityAccountsGroup.style.display = "block";
+      loadSavedAccountsList();
+    } else {
+      antigravityAccountsGroup.style.display = "none";
+    }
+  }
+
   if (targetTab && settingsTabs) {
     settingsTabs.querySelectorAll(".modal-tab-btn").forEach(b => {
       if (b.getAttribute("data-tab") === targetTab) {
@@ -1513,6 +1542,68 @@ function openSettingsModal(targetTab = null) {
   }
 
   settingsModal.classList.remove("hidden");
+}
+
+async function loadSavedAccountsList() {
+  if (!savedAccountsList) return;
+  savedAccountsList.innerHTML = '<span style="color: var(--text-muted); font-size: 11px;">Đang tải danh sách tài khoản...</span>';
+  try {
+    const res = await fetch(`/api/auth/accounts?username=${encodeURIComponent(state.username || 'qtu')}`);
+    if (!res.ok) {
+      savedAccountsList.innerHTML = '<span style="color: var(--accent-err); font-size: 11px;">Không thể tải danh sách tài khoản.</span>';
+      return;
+    }
+    const data = await res.json();
+    const accounts = (data && data.accounts) ? data.accounts : [];
+    if (accounts.length === 0) {
+      savedAccountsList.innerHTML = '<span style="color: var(--text-muted); font-size: 11px;">Chưa có tài khoản nào được lưu.</span>';
+      return;
+    }
+    savedAccountsList.innerHTML = "";
+    accounts.forEach(acc => {
+      const row = document.createElement("div");
+      row.className = `account-row ${acc.is_active ? 'active' : ''}`;
+      row.innerHTML = `
+        <div class="account-email">
+          <span>📧</span>
+          <span>${acc.email}</span>
+          ${acc.is_active ? '<span class="account-badge-active">Đang dùng</span>' : ''}
+        </div>
+        ${!acc.is_active ? `<button type="button" class="account-switch-btn" data-email="${acc.email}">Kích hoạt</button>` : ''}
+      `;
+      const btn = row.querySelector(".account-switch-btn");
+      if (btn) {
+        btn.addEventListener("click", async () => {
+          triggerHaptic(25);
+          btn.disabled = true;
+          btn.innerText = "Đang đổi...";
+          try {
+            const swRes = await fetch("/api/auth/switch", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                username: state.username || "qtu",
+                target_email: acc.email
+              })
+            });
+            const swData = await swRes.json();
+            if (swData.success) {
+              appendMessage("assistant", `[OK] Đã chuyển sang tài khoản AI: ${acc.email}`);
+              loadSavedAccountsList();
+              fetchQuotaFromServer();
+            } else {
+              appendMessage("assistant", `[X] Lỗi chuyển tài khoản: ${swData.error || "Không xác định"}`);
+            }
+          } catch (e) {
+            appendMessage("assistant", `[X] Lỗi kết nối khi chuyển tài khoản: ${e.message}`);
+          }
+        });
+      }
+      savedAccountsList.appendChild(row);
+    });
+  } catch (e) {
+    savedAccountsList.innerHTML = '<span style="color: var(--accent-err); font-size: 11px;">Lỗi tải dữ liệu tài khoản.</span>';
+  }
 }
 
 async function loadAdminUsersList() {
@@ -1578,6 +1669,13 @@ async function loadAdminUsersList() {
 
 if (settingsBtn) settingsBtn.onclick = () => openSettingsModal();
 if (drawerSettingsBtn) drawerSettingsBtn.onclick = () => openSettingsModal();
+if (drawerSwitchAccountBtn) {
+  drawerSwitchAccountBtn.onclick = () => {
+    triggerHaptic(20);
+    closeDrawer();
+    openSettingsModal("tab-ai");
+  };
+}
 if (drawerUserCard) drawerUserCard.onclick = () => openSettingsModal("tab-emoji");
 
 closeSettingsBtn.onclick = () => settingsModal.classList.add("hidden");

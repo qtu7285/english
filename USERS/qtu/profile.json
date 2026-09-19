@@ -4,8 +4,11 @@
   "avatar_user": "🎡",
   "avatar_ai": "🤖",
   "avatar_target": "🎯",
+  "show_chat_avatars": false,
+  "role": "admin",
+  "can_view_ai_info": true,
   "ai_engine": "antigravity",
   "gemini_model": "gemini-3.6-flash",
-  "tts_rate": 0.9,
-  "updated_at": "2026-09-18T23:23:19Z"
+  "tts_rate": 1,
+  "updated_at": "2026-09-19T15:44:09Z"
 }

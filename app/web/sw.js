@@ -1,4 +1,4 @@
-const CACHE_NAME = 'engtutor-v20';
+const CACHE_NAME = 'engtutor-v22';
 const STATIC_ASSETS = [
   '/',
   '/style.css',

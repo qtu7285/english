@@ -774,6 +774,8 @@ func main() {
 	mux.HandleFunc("/api/chat", app.handleChat)
 	mux.HandleFunc("/api/user/profile", app.handleUserProfile)
 	mux.HandleFunc("/api/users/list", app.handleUsersList)
+	mux.HandleFunc("/api/auth/accounts", app.handleAuthAccounts)
+	mux.HandleFunc("/api/auth/switch", app.handleAuthSwitch)
 
 	// Cho thiết bị khác trong tailnet tải CA về cài, khỏi phải copy file thủ công.
 	mux.HandleFunc("/ca.crt", func(w http.ResponseWriter, r *http.Request) {
