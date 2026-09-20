@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content, viewport-fit=cover">
-  <title>English Tutor & Vault AI</title>
+  <title>Q-English • QueenCode AI</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0b0f19">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="English AI">
+  <meta name="apple-mobile-web-app-title" content="Q-English">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=1.0.5">
   <style>
     /* Critical Drawer Shell: ngăn chặn hoàn toàn lỗi vỡ layout khi CSS chưa kịp tải */
     .drawer-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); z-index: 90; backdrop-filter: blur(4px); display: none; }
@@ -36,7 +36,7 @@
         <div class="brand">
           <div class="brand-logo">EN</div>
           <div class="brand-info">
-            <h1>English Tutor AI</h1>
+            <h1>Q-English <span class="header-version-badge">v1.0.5</span></h1>
             <div class="header-model-badge" id="headerModelBadge" title="Đổi mô hình AI">
               <span class="status-indicator online" id="headerModelIndicator"></span>
               <span class="header-model-label" id="headerModelLabel">3.6 Flash</span>
@@ -68,6 +68,38 @@
             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
           </svg>
         </button>
+        <div class="header-more-container">
+          <button class="icon-btn" id="headerMoreBtn" title="Tùy chọn thao tác" aria-label="Tùy chọn thao tác" aria-haspopup="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="1.5"></circle>
+              <circle cx="12" cy="5" r="1.5"></circle>
+              <circle cx="12" cy="19" r="1.5"></circle>
+            </svg>
+          </button>
+          <div class="header-dropdown-menu hidden" id="headerMoreMenu" role="menu">
+            <button class="dropdown-item" id="menuSaveBtn" type="button" role="menuitem">
+              <span class="dropdown-icon">💾</span>
+              <span class="dropdown-label">Lưu tiến độ</span>
+            </button>
+            <button class="dropdown-item" id="menuGitBtn" type="button" role="menuitem">
+              <span class="dropdown-icon">🔄</span>
+              <span class="dropdown-label">Đồng bộ Git</span>
+            </button>
+            <button class="dropdown-item" id="menuHelpBtn" type="button" role="menuitem">
+              <span class="dropdown-icon">❓</span>
+              <span class="dropdown-label">Hướng dẫn sử dụng</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" id="menuBugFixB5Btn" type="button" role="menuitem">
+              <span class="dropdown-icon">📱</span>
+              <span class="dropdown-label">Sửa lỗi UI m55</span>
+            </button>
+            <button class="dropdown-item" id="menuBugFixB6Btn" type="button" role="menuitem">
+              <span class="dropdown-icon">🛠️</span>
+              <span class="dropdown-label">Sửa lỗi UI zf6</span>
+            </button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -286,8 +318,8 @@
         <div class="drawer-brand">
           <div class="brand-logo">EN</div>
           <div>
-            <h3>English Tutor</h3>
-            <span class="drawer-sub">Gia sư Anh ngữ AI</span>
+            <h3>Q-English</h3>
+            <span class="drawer-sub">QueenCode English AI</span>
           </div>
         </div>
         <button class="icon-btn drawer-close-btn" id="drawerCloseBtn" title="Đóng menu">
@@ -312,36 +344,36 @@
           <button class="drawer-nav-item" id="navSaveBtn" type="button">
             <span class="nav-icon">💾</span>
             <div class="nav-info">
-              <span class="nav-title">Lưu tiến độ (.s)</span>
+              <span class="nav-title">Lưu tiến độ</span>
               <span class="nav-desc">Lưu bài học & từ vựng đủ điều kiện</span>
             </div>
           </button>
           <button class="drawer-nav-item" id="navGitBtn" type="button">
             <span class="nav-icon">🔄</span>
             <div class="nav-info">
-              <span class="nav-title">Đồng bộ Git (.g)</span>
+              <span class="nav-title">Đồng bộ Git</span>
               <span class="nav-desc">Commit và đẩy dữ liệu lên GitHub</span>
+            </div>
+          </button>
+          <button class="drawer-nav-item" id="navHelpBtn" type="button">
+            <span class="nav-icon">❓</span>
+            <div class="nav-info">
+              <span class="nav-title">Hướng dẫn sử dụng</span>
+              <span class="nav-desc">Xem hướng dẫn các lệnh trong app</span>
             </div>
           </button>
           <button class="drawer-nav-item" id="navBugFixB5Btn" type="button">
             <span class="nav-icon">📱</span>
             <div class="nav-info">
-              <span class="nav-title">Sửa lỗi UI m55 (.b5)</span>
+              <span class="nav-title">Sửa lỗi UI m55</span>
               <span class="nav-desc">Tự quét ảnh m55 và sửa lỗi</span>
             </div>
           </button>
           <button class="drawer-nav-item" id="navBugFixB6Btn" type="button">
             <span class="nav-icon">🛠️</span>
             <div class="nav-info">
-              <span class="nav-title">Sửa lỗi UI zf6 (.b6)</span>
+              <span class="nav-title">Sửa lỗi UI zf6</span>
               <span class="nav-desc">Tự quét ảnh zf6 và sửa lỗi</span>
-            </div>
-          </button>
-          <button class="drawer-nav-item" id="navHelpBtn" type="button">
-            <span class="nav-icon">❓</span>
-            <div class="nav-info">
-              <span class="nav-title">Trợ giúp lệnh (.help)</span>
-              <span class="nav-desc">Xem hướng dẫn các lệnh trong app</span>
             </div>
           </button>
         </div>
@@ -386,10 +418,14 @@
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
+
+        <div class="drawer-version-info">
+          <span>Q-English v1.0.5</span>
+        </div>
       </div>
     </aside>
   </div>
 
-  <script type="module" src="app.js?v=34"></script>
+  <script type="module" src="app.js?v=1.0.5"></script>
 </body>
 </html>

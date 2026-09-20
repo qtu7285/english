@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "English Tutor & Vault AI",
-  "short_name": "English AI",
-  "description": "Gia sư tiếng Anh cá nhân và quản lý kho từ vựng trực tiếp trên Termux",
+  "name": "Q-English • QueenCode AI",
+  "short_name": "Q-English",
+  "description": "Gia sư tiếng Anh cá nhân QueenCode và quản lý kho từ vựng trực tiếp trên Termux",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

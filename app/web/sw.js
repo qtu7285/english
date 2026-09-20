@@ -1,4 +1,4 @@
-const CACHE_NAME = 'engtutor-v34';
+const CACHE_NAME = 'q-english-v1.0.5';
 const STATIC_ASSETS = [
   '/',
   '/style.css',
