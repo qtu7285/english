@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="English AI">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=24">
+  <link rel="stylesheet" href="style.css?v=31">
   <style>
     /* Critical Drawer Shell: ngăn chặn hoàn toàn lỗi vỡ layout khi CSS chưa kịp tải */
     .drawer-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); z-index: 90; backdrop-filter: blur(4px); display: none; }
@@ -139,13 +139,13 @@
           <!-- Tab 1: Emoji & Hồ sơ -->
           <div class="tab-content active" id="tab-emoji">
             <div class="form-group">
-              <label for="usernameInput">Người học (Username):</label>
+              <label for="usernameInput">Tên người học:</label>
               <input type="text" id="usernameInput" placeholder="qtu" value="qtu" autocomplete="off" spellcheck="false">
               <small class="form-hint">Dữ liệu cá nhân được lưu trữ riêng tại: <code>USERS/&lt;username&gt;/</code></small>
             </div>
 
             <div class="form-group" style="margin-top: 14px;">
-              <label>Avatar của bạn (User):</label>
+              <label>Ảnh đại diện của bạn:</label>
               <div class="avatar-picker" id="userAvatarPicker">
                 <button type="button" class="avatar-opt selected" data-avatar="🧑‍🎓" title="Học viên">🧑‍🎓</button>
                 <button type="button" class="avatar-opt" data-avatar="🦊" title="Cáo thông thái">🦊</button>
@@ -156,7 +156,7 @@
                 <button type="button" class="avatar-opt" data-avatar="🦁" title="Sư tử dũng mãnh">🦁</button>
                 <button type="button" class="avatar-opt" data-avatar="⚡" title="Năng lượng">⚡</button>
               </div>
-              <input type="text" id="customUserAvatarInput" placeholder="Hoặc nhập emoji / tên viết tắt (ví dụ: QT)..." maxlength="8" style="margin-top: 8px;">
+              <input type="text" id="customUserAvatarInput" placeholder="Nhập emoji hoặc tên viết tắt..." maxlength="8" style="margin-top: 8px;">
             </div>
 
             <div class="form-group" style="margin-top: 14px;">
@@ -171,11 +171,11 @@
                 <button type="button" class="avatar-opt" data-avatar="🛸" title="Công nghệ cao">🛸</button>
                 <button type="button" class="avatar-opt" data-avatar="🎓" title="Hàn lâm">🎓</button>
               </div>
-              <input type="text" id="customAiAvatarInput" placeholder="Hoặc nhập emoji / tên viết tắt (ví dụ: AI)..." maxlength="8" style="margin-top: 8px;">
+              <input type="text" id="customAiAvatarInput" placeholder="Nhập emoji hoặc tên viết tắt..." maxlength="8" style="margin-top: 8px;">
             </div>
 
             <div class="form-group" style="margin-top: 14px;">
-              <label>Biểu tượng từ mục tiêu (Target Word):</label>
+              <label>Biểu tượng từ mục tiêu:</label>
               <div class="avatar-picker" id="targetAvatarPicker">
                 <button type="button" class="avatar-opt selected" data-avatar="🎯" title="Mục tiêu">🎯</button>
                 <button type="button" class="avatar-opt" data-avatar="📖" title="Từ điển">📖</button>
@@ -186,8 +186,8 @@
                 <button type="button" class="avatar-opt" data-avatar="📌" title="Ghim từ">📌</button>
                 <button type="button" class="avatar-opt" data-avatar="✨" title="Ngôi sao">✨</button>
               </div>
-              <input type="text" id="customTargetAvatarInput" placeholder="Mặc định là 🎯 (hoặc nhập emoji khác)..." maxlength="8" style="margin-top: 8px;">
-              <small class="form-hint">Hiển thị trước từ cần học trong khung chat (ví dụ: 🎯 capable thay vì .capable).</small>
+              <input type="text" id="customTargetAvatarInput" placeholder="Nhập emoji tùy chọn..." maxlength="8" style="margin-top: 8px;">
+              <small class="form-hint">Biểu tượng đại diện cho từ vựng mục tiêu.</small>
             </div>
 
             <div class="form-group checkbox-group" style="margin-top: 14px;">
@@ -195,22 +195,20 @@
                 <input type="checkbox" id="showChatAvatarsCheck">
                 Hiện avatar trong khung chat
               </label>
-              <small class="form-hint">Mặc định tắt để tối đa diện tích hiển thị câu và bong bóng chat.</small>
             </div>
 
             <div class="form-group" style="margin-top: 14px;">
-              <label for="fontSizeSelect">Cỡ chữ bài học (Font size):</label>
+              <label for="fontSizeSelect">Cỡ chữ:</label>
               <select id="fontSizeSelect">
-                <option value="13.5px">Nhỏ (13.5px)</option>
-                <option value="15px" selected>Vừa - Mặc định (15px)</option>
-                <option value="16.5px">Lớn (16.5px)</option>
-                <option value="18px">Rất lớn (18px)</option>
+                <option value="13.5px">Nhỏ</option>
+                <option value="15px" selected>Vừa</option>
+                <option value="16.5px">Lớn</option>
+                <option value="18px">Rất lớn</option>
               </select>
-              <small class="form-hint">Điều chỉnh kích thước chữ hiển thị trong bong bóng bài học.</small>
             </div>
 
             <div class="form-group" id="adminUsersSection" style="display: none; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color);">
-              <label style="color: var(--primary); font-weight: 700;">👑 Quản lý quyền người học (Admin):</label>
+              <label style="color: var(--primary); font-weight: 700;">👑 Quản trị người học:</label>
               <div id="adminUsersList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;"></div>
               <small class="form-hint">Chỉ những người học được cấp quyền "Xem thông tin AI" mới thấy Email và % Quota của bạn.</small>
             </div>
@@ -219,27 +217,27 @@
           <!-- Tab 2: Động cơ AI -->
           <div class="tab-content" id="tab-ai">
             <div class="form-group">
-              <label for="engineSelect">Động cơ AI (Engine):</label>
+              <label for="engineSelect">Động cơ AI:</label>
               <select id="engineSelect">
-                <option value="antigravity" selected>Antigravity CLI (Termux Pro - Không cần API Key)</option>
-                <option value="gemini">Google Gemini REST API (Nhanh ~1s, dùng API Key)</option>
+                <option value="antigravity" selected>Nội bộ</option>
+                <option value="gemini">Gemini API</option>
               </select>
-              <small class="form-hint" id="engineHint">Sử dụng trực tiếp tài khoản Pro đã đăng nhập trên Termux, không lo hết hạn ngạch.</small>
+              <small class="form-hint" id="engineHint">Sử dụng hệ thống sẵn có, không cần cài đặt thêm.</small>
             </div>
 
-            <div class="form-group" id="apiKeyGroup" style="margin-top: 14px;">
-              <label for="apiKeyInput">Google Gemini API Key:</label>
-              <input type="password" id="apiKeyInput" placeholder="AIzaSy... (Tùy chọn nếu dùng Antigravity Pro)" autocomplete="off">
+            <div class="form-group" id="apiKeyGroup" style="display: none; margin-top: 14px;">
+              <label for="apiKeyInput">Gemini API Key:</label>
+              <input type="password" id="apiKeyInput" placeholder="Dán API Key của bạn tại đây..." autocomplete="off">
               <small class="form-hint">Lấy miễn phí tại <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a>.</small>
             </div>
 
             <div class="form-group" id="modelGroup" style="margin-top: 16px;">
-              <label for="modelSelect">Mô hình AI (Model):</label>
+              <label for="modelSelect">Mô hình AI:</label>
               <select id="modelSelect">
-                <option value="gemini-3.6-flash" selected>Gemini 3.6 Flash (Khuyên dùng - Chuẩn Google)</option>
+                <option value="gemini-3.6-flash" selected>Gemini 3.6 Flash</option>
                 <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
                 <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
-                <option value="gemini-3.1-pro">Gemini 3.1 Pro (Ngữ pháp chuyên sâu)</option>
+                <option value="gemini-3.1-pro">Gemini 3.1 Pro</option>
                 <option value="custom">-- Nhập tên mô hình khác... --</option>
               </select>
               <input type="text" id="customModelInput" placeholder="Ví dụ: gemini-3.6-flash" style="display: none; margin-top: 8px;">
@@ -248,21 +246,21 @@
             <div class="form-group checkbox-group" style="margin-top: 14px;">
               <label>
                 <input type="checkbox" id="enableVaultToolsCheck" checked>
-                Cho phép AI đọc & ghi file trong Vault (Function Calling)
+                Tự động lưu từ vựng & tiến độ học
               </label>
             </div>
 
             <div class="form-group" id="antigravityAccountsGroup" style="display: none; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-color);">
-              <label style="color: var(--primary); font-weight: 700;">Tài khoản Google đã liên kết (Antigravity):</label>
+              <label style="color: var(--primary); font-weight: 700;">Tài khoản Pro đã liên kết:</label>
               <div id="savedAccountsList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;"></div>
-              <small class="form-hint">Bấm "Kích hoạt" để chuyển đổi 1 chạm sang tài khoản khác.</small>
+              <small class="form-hint">Bấm "Kích hoạt" để chuyển đổi nhanh sang tài khoản khác.</small>
             </div>
           </div>
 
           <!-- Tab 3: Giọng đọc -->
           <div class="tab-content" id="tab-voice">
             <div class="form-group">
-              <label for="ttsRate">Tốc độ phát âm (TTS): <span id="ttsRateVal">0.9x</span></label>
+              <label for="ttsRate">Tốc độ phát âm: <span id="ttsRateVal">0.9x</span></label>
               <input type="range" id="ttsRate" min="0.5" max="1.5" step="0.1" value="0.9">
               <small class="form-hint">Điều chỉnh tốc độ đọc câu ví dụ và từ vựng tiếng Anh.</small>
             </div>
@@ -392,6 +390,6 @@
     </aside>
   </div>
 
-  <script src="app.js?v=24"></script>
+  <script src="app.js?v=31"></script>
 </body>
 </html>

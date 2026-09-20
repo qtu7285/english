@@ -623,7 +623,7 @@ function processLineForAudio(line) {
   if (!line || line.includes("inline-audio-btn") || line.includes("<pre>") || line.includes("<code>")) return line;
 
   // Do not process audio for status lines, definitions, or control badges
-  if (line.includes("badge-vi") || line.includes("badge-next") || line.includes("badge-confirm") || line.includes("badge-ok") || line.includes("badge-error") || line.includes("badge-warn") || line.includes("badge-diff")) {
+  if (line.includes("badge-vi") || line.includes("badge-next") || line.includes("badge-confirm") || line.includes("badge-ok") || line.includes("badge-error") || line.includes("badge-warn") || line.includes("badge-diff") || line.includes("bubble-divider")) {
     return line;
   }
 
@@ -679,7 +679,10 @@ function processLineForAudio(line) {
 function renderMarkdown(text) {
   if (!text) return "";
 
-  let html = text
+  // Tự động ẩn dòng [NEXT] hướng dẫn nhập số câu luyện trên Web UI (vì đã có Quick Chips bên dưới)
+  let clean = text.replace(/(?:^|\n)\s*\[NEXT\]\s*Nhập số câu[^\n]*/gi, '');
+
+  let html = clean
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
@@ -708,10 +711,18 @@ function renderMarkdown(text) {
   html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
   html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
 
-  // Auto divider before "Ví dụ:" or "Example:" if not preceded by --- or <hr>
-  html = html.replace(/(?:^|\n)(?!---+|\*\*\*+|___+|<hr[^>]*>)(?:[-*•]\s*)?(?:###?\s*)?(Ví dụ:|Example:)/gim, '\n---\n$1');
+  // Auto divider with centered label for "Ví dụ:" or "Example:"
+  // 1. Phân cách --- đi liền trước "Ví dụ:" hoặc "**Ví dụ:**" hoặc "Example:"
+  html = html.replace(/(?:^|\n)(?:---|\*\*\*|___)\s*\n+(?:[-*•]\s*)?(?:###?\s*)?(?:<strong>)?(?:Ví dụ|Example)(?::)?(?:<\/strong>)?(?::)?/gim,
+    '\n<div class="bubble-divider-label"><span>Examples</span></div>\n');
 
-  // Horizontal rules (---, ***, ___ on a single line)
+  // 2. Dòng "Ví dụ:" hoặc "Example:" đứng độc lập
+  html = html.replace(/(?:^|\n)(?!<div class="bubble-divider-label">)(?:[-*•]\s*)?(?:###?\s*)?(?:<strong>)(Ví dụ|Example)(?::)?(?:<\/strong>)(?::)?/gim,
+    '\n<div class="bubble-divider-label"><span>Examples</span></div>\n');
+  html = html.replace(/(?:^|\n)(?!<div class="bubble-divider-label">)(?:[-*•]\s*)?(?:###?\s*)(Ví dụ|Example)(?::)?(?=\s*\n|$)/gim,
+    '\n<div class="bubble-divider-label"><span>Examples</span></div>\n');
+
+  // 3. Các đường kẻ ngang đơn thuần còn lại (---, ***, ___ đứng 1 mình)
   html = html.replace(/^(?:---|\*\*\*|___)\s*$/gim, '<hr class="bubble-divider">');
 
   // Status Badges & Emojis
@@ -739,6 +750,7 @@ function renderMarkdown(text) {
 
   html = `<p>${html}</p>`;
   html = html.replace(/<p>\s*(<hr[^>]*>)\s*<\/p>/gi, '$1');
+  html = html.replace(/<p>\s*(<div class="bubble-divider-label">.*?<\/div>)\s*<\/p>/gi, '$1');
   html = html.replace(/<p>\s*<br\s*\/?>/gi, '<p>');
   html = html.replace(/<br\s*\/?>\s*<\/p>/gi, '</p>');
   html = html.replace(/<p>\s*<\/p>/g, '');
@@ -1390,12 +1402,23 @@ if (navHelpBtn) {
 
 // Settings Modal Handlers
 function updateEngineUI() {
-  if (engineSelect.value === "antigravity") {
-    engineHint.innerText = "Sử dụng trực tiếp tài khoản Pro đã đăng nhập trên Termux, không lo hết hạn ngạch.";
-    apiKeyInput.placeholder = "Tùy chọn nếu dùng Antigravity Pro...";
+  const isAntigravity = engineSelect.value === "antigravity";
+  const isAdmin = state.role === "admin" || state.username === "qtu";
+
+  if (isAntigravity) {
+    engineHint.innerText = "Sử dụng hệ thống sẵn có, không cần cài đặt thêm.";
+    if (apiKeyGroup) apiKeyGroup.style.display = "none";
+    if (antigravityAccountsGroup) {
+      antigravityAccountsGroup.style.display = isAdmin ? "block" : "none";
+      if (isAdmin) loadSavedAccountsList();
+    }
   } else {
-    engineHint.innerText = "Gọi trực tiếp đến Google Gemini REST API qua API Key của bạn (phản hồi siêu nhanh ~1s).";
-    apiKeyInput.placeholder = "AIzaSy... (Bắt buộc với Gemini REST API)";
+    engineHint.innerText = "Sử dụng Gemini API Key của bạn để học.";
+    if (apiKeyGroup) apiKeyGroup.style.display = "block";
+    apiKeyInput.placeholder = "Dán API Key của bạn tại đây...";
+    if (antigravityAccountsGroup) {
+      antigravityAccountsGroup.style.display = "none";
+    }
   }
 }
 
@@ -1578,15 +1601,8 @@ function openSettingsModal(targetTab = null) {
     }
   }
 
-  // Hiển thị khu vực quản lý tài khoản Google cho Admin
-  if (antigravityAccountsGroup) {
-    if (state.role === "admin" || state.username === "qtu") {
-      antigravityAccountsGroup.style.display = "block";
-      loadSavedAccountsList();
-    } else {
-      antigravityAccountsGroup.style.display = "none";
-    }
-  }
+  // Cập nhật hiển thị động cơ AI và tài khoản liên quan
+  updateEngineUI();
 
   if (targetTab && settingsTabs) {
     settingsTabs.querySelectorAll(".modal-tab-btn").forEach(b => {
