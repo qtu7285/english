@@ -11,12 +11,21 @@ USE_TLS=0
 GEN_CERT=0
 EXPORT_CA=0
 TLS_HOSTS="${ENGLISH_TLS_HOSTS:-zf3}"
+TLS_DIR="${ENGLISH_TLS_DIR:-$HOME/.local/share/english-tls}"
 
-# Nhận tham số theo thứ tự tự do: số cổng, tls, gen-cert
+# Tự động bật TLS nếu đã có sẵn chứng chỉ server
+if [ -f "$TLS_DIR/server.crt" ] && [ -f "$TLS_DIR/server.key" ]; then
+    USE_TLS=1
+fi
+
+# Nhận tham số theo thứ tự tự do: số cổng, tls, notls/http, gen-cert, export-ca
 for arg in "$@"; do
     case "$arg" in
         tls|--tls)
             USE_TLS=1
+            ;;
+        notls|--notls|http|--http|no-tls|--no-tls)
+            USE_TLS=0
             ;;
         gen-cert|--gen-cert)
             GEN_CERT=1
@@ -25,7 +34,7 @@ for arg in "$@"; do
             EXPORT_CA=1
             ;;
         ''|*[!0-9]*)
-            echo "[X] Tham số không hợp lệ: $arg (dùng: bash app/run.sh [PORT] [tls|gen-cert])" >&2
+            echo "[X] Tham số không hợp lệ: $arg (dùng: bash app/run.sh [PORT] [tls|http|gen-cert])" >&2
             exit 1
             ;;
         *)

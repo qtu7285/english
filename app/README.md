@@ -76,8 +76,10 @@ bash app/run.sh gen-cert
 Chạy server ở chế độ HTTPS:
 
 ```bash
-bash app/run.sh tls
-bash app/run.sh 8080 tls      # cổng khác
+.res                           # Tự động bật HTTPS nếu đã có chứng chỉ TLS
+bash app/run.sh                # Tương tự
+bash app/run.sh http           # Ép chạy HTTP thường khi đã có chứng chỉ
+bash app/run.sh 8080           # Cổng khác
 ```
 
 Đổi tên máy đưa vào chứng chỉ (mặc định `zf3`):

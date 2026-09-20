@@ -96,6 +96,22 @@ const customAiAvatarInput = document.getElementById("customAiAvatarInput");
 const targetAvatarPicker = document.getElementById("targetAvatarPicker");
 const customTargetAvatarInput = document.getElementById("customTargetAvatarInput");
 const showChatAvatarsCheck = document.getElementById("showChatAvatarsCheck");
+const fontSizeSelect = document.getElementById("fontSizeSelect");
+
+// Áp dụng cỡ chữ hiển thị bài học từ localStorage
+function applyFontSize(size) {
+  if (size) {
+    document.documentElement.style.setProperty("--bubble-font-size", size);
+  }
+}
+applyFontSize(localStorage.getItem("chat_font_size") || "15px");
+if (fontSizeSelect) {
+  fontSizeSelect.value = localStorage.getItem("chat_font_size") || "15px";
+  fontSizeSelect.addEventListener("change", () => {
+    applyFontSize(fontSizeSelect.value);
+    localStorage.setItem("chat_font_size", fontSizeSelect.value);
+  });
+}
 const engineSelect = document.getElementById("engineSelect");
 const engineHint = document.getElementById("engineHint");
 const apiKeyGroup = document.getElementById("apiKeyGroup");
@@ -529,6 +545,21 @@ function updateContextChips(lastText, resType = "") {
   if (isQuestion) {
     // Dang lam test: AN TOAN BO nut chon so cau de tranh hoc vien bam nham lam hong bai test!
     if (messageInput) messageInput.placeholder = "Nhập đáp án (A, B, C, D hoặc từ điền)...";
+
+    // Neu la cau hoi dien tu (khong co lua chon trac nghiem A, B, C, D):
+    // Hien thi chip "💡 Gợi ý" giup hoc vien vuot qua cau hoi kho
+    const choiceContainer = document.getElementById("dynamicChoiceChips");
+    const hasChoices = choiceContainer && choiceContainer.querySelectorAll(".chip-choice").length > 0;
+    if (!hasChoices) {
+      const hintChip = document.createElement("button");
+      hintChip.type = "button";
+      hintChip.className = "chip chip-hint";
+      hintChip.setAttribute("data-send", "Gợi ý cho tôi chữ cái đầu");
+      hintChip.innerText = "💡 Gợi ý";
+      hintChip.title = "Bấm để AI gợi ý chữ cái đầu và số ký tự của từ";
+      container.appendChild(hintChip);
+    }
+
     updateQuickChipsVisibility();
     return;
   }
@@ -1531,6 +1562,9 @@ function openSettingsModal(targetTab = null) {
   if (showChatAvatarsCheck) {
     showChatAvatarsCheck.checked = !!state.showChatAvatars;
   }
+  if (fontSizeSelect) {
+    fontSizeSelect.value = localStorage.getItem("chat_font_size") || "15px";
+  }
   ttsRate.value = state.ttsRate;
   ttsRateVal.innerText = state.ttsRate + "x";
 
@@ -1762,6 +1796,11 @@ saveSettingsBtn.onclick = () => {
     state.showChatAvatars = showChatAvatarsCheck.checked;
     localStorage.setItem("show_chat_avatars", state.showChatAvatars);
     applyChatAvatarsVisibility();
+  }
+  if (fontSizeSelect) {
+    const sz = fontSizeSelect.value;
+    applyFontSize(sz);
+    localStorage.setItem("chat_font_size", sz);
   }
 
   localStorage.setItem("username", state.username);

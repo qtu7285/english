@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="English AI">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="stylesheet" href="style.css?v=24">
   <style>
     /* Critical Drawer Shell: ngăn chặn hoàn toàn lỗi vỡ layout khi CSS chưa kịp tải */
     .drawer-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65); z-index: 90; backdrop-filter: blur(4px); display: none; }
@@ -198,6 +198,17 @@
               <small class="form-hint">Mặc định tắt để tối đa diện tích hiển thị câu và bong bóng chat.</small>
             </div>
 
+            <div class="form-group" style="margin-top: 14px;">
+              <label for="fontSizeSelect">Cỡ chữ bài học (Font size):</label>
+              <select id="fontSizeSelect">
+                <option value="13.5px">Nhỏ (13.5px)</option>
+                <option value="15px" selected>Vừa - Mặc định (15px)</option>
+                <option value="16.5px">Lớn (16.5px)</option>
+                <option value="18px">Rất lớn (18px)</option>
+              </select>
+              <small class="form-hint">Điều chỉnh kích thước chữ hiển thị trong bong bóng bài học.</small>
+            </div>
+
             <div class="form-group" id="adminUsersSection" style="display: none; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color);">
               <label style="color: var(--primary); font-weight: 700;">👑 Quản lý quyền người học (Admin):</label>
               <div id="adminUsersList" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;"></div>
@@ -381,6 +392,6 @@
     </aside>
   </div>
 
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=24"></script>
 </body>
 </html>

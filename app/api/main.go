@@ -599,6 +599,14 @@ func ClassifyResponse(text string, userMsg string) (string, string, string) {
 }
 
 func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	var body struct {
 		Engine            string                   `json:"engine"`
 		Message           string                   `json:"message"`
@@ -758,6 +766,21 @@ func getTailscaleIP() string {
 	return ""
 }
 
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == "OPTIONS" {
+			log.Printf("[REQ] OPTIONS %s (preflight từ %s)", r.URL.Path, r.RemoteAddr)
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		log.Printf("[REQ] %s %s (từ %s)", r.Method, r.URL.Path, r.RemoteAddr)
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	portFlag := flag.Int("port", 5000, "Port to listen on (default 5000)")
 	hostFlag := flag.String("host", "0.0.0.0", "Host to bind on (default 0.0.0.0)")
@@ -817,9 +840,12 @@ func main() {
 		vaultRoot = *vaultFlag
 	}
 
-	webDir := filepath.Join(baseDir, "app", "web")
+	webDir := filepath.Join(vaultRoot, "app", "web")
 	if _, err := os.Stat(webDir); os.IsNotExist(err) {
 		webDir = filepath.Join(cwd, "app", "web")
+		if _, err := os.Stat(webDir); os.IsNotExist(err) {
+			webDir = filepath.Join(baseDir, "app", "web")
+		}
 	}
 
 	vault := NewVaultManager(vaultRoot)
@@ -929,9 +955,9 @@ func main() {
 
 	server := &http.Server{
 		Addr:         addr,
-		Handler:      mux,
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
+		Handler:      withCORS(mux),
+		ReadTimeout:  120 * time.Second,
+		WriteTimeout: 120 * time.Second,
 	}
 
 	var serveErr error
