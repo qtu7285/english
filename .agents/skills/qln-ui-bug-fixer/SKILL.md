@@ -60,9 +60,10 @@ flowchart TD
 * **Lỗi tràn màn hình / co giãn**:
   * Kiểm tra viewport meta, safe-area padding (`env(safe-area-inset-*)`).
   * Kiểm tra flexbox, `overflow-y: auto`, `box-sizing: border-box`.
-* **Lỗi tương tác / hiển thị động & Deep Linking**:
+* **Lỗi tương tác / hiển thị động, Deep Linking & Cử chỉ**:
   * Kiểm tra logic JavaScript trong `app/web/app.js` và các module trong `app/web/modules/` (selector DOM, event listeners, class toggle).
   * Kiểm tra URL Hash Routing: Mọi modal/popup (Cài đặt `#settings`, `#settings/ai`, `#settings/voice`, Vault `#vault`) phải đồng bộ URL hash khi đóng/mở/chuyển tab, mở lại đúng view khi F5/refresh, và đóng lại an toàn khi nhấn phím Back của Android/trình duyệt (`hashchange`).
+  * Kiểm tra Cử chỉ Mobile & Pull-to-Refresh: Xác nhận các scroll container chính (Chat, Modal Cài đặt, Drawer, Vault) đều hỗ trợ kéo xuống để làm mới khi ở đỉnh (`scrollTop <= 0`), không chặn cuộn thông thường, có phản hồi rung haptic và spinner xoay.
 
 ### Bước 4: Sửa mã nguồn & Xác thực (Patch & Verify)
 * Chỉnh sửa các file liên quan bằng `replace_file_content`:

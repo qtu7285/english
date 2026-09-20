@@ -16,6 +16,15 @@ Mọi giao diện cửa sổ popup / modal / dialog (như Cài đặt `#settings
 * **Hardware / Browser Back button**: Khi bấm nút Quay lại (Back) trên trình duyệt hoặc phím điều hướng Android, modal phải tự đóng lại một cách tự nhiên thông qua sự kiện `hashchange` mà không tải lại trang hoặc thoát ứng dụng.
 * **URL Sync**: Khi mở modal, chuyển tab hoặc đóng modal bằng nút bấm / click ra ngoài (backdrop click), URL hash phải được cập nhật đồng bộ (`history.pushState` / `history.replaceState` hoặc gán `window.location.hash`).
 
+## Mobile gestures & pull-to-refresh standard
+
+Mọi màn hình chính, viewport cuộn, và cửa sổ modal/drawer có thanh cuộn (như Chat Viewport, Cài đặt `#settings`, Menu Drawer, Kho tài liệu `#vault`,...) bắt buộc phải hỗ trợ cử chỉ kéo xuống để làm mới (Pull-to-Refresh):
+* **Nguyên tắc kích hoạt**: Chỉ kích hoạt cử chỉ khi thanh cuộn ở vị trí trên cùng (`scrollTop <= 0`). Khi người dùng đang cuộn nội dung (`scrollTop > 0`), tuyệt đối không được chặn hay xung đột với cuộn tự nhiên.
+* **Phản hồi xúc giác & thị giác (Haptic & Visual Feedback)**: Khi người dùng kéo xuống, hiển thị thanh chỉ báo làm mới mượt mà (spinner xoay theo khoảng cách kéo, đổi nhãn khi vượt ngưỡng kích hoạt) kèm rung nhẹ (`triggerHaptic`).
+* **Hành vi làm mới linh hoạt**:
+  * Màn hình chính (Chat): Làm mới toàn bộ trang (`window.location.reload()`). Nhờ URL Hash Routing, modal đang mở sẽ được khôi phục nguyên vẹn sau khi làm mới.
+  * Màn hình cục bộ (Modal/Drawer): Có thể làm mới dữ liệu tại chỗ (ví dụ đồng bộ lại Quota, danh sách file, hồ sơ) mà không gây chớp hoặc tải lại toàn bộ trang.
+
 ## FAST_CORE — zero-blocking startup
 
 For a new session, DO NOT read local learner or canonical files merely because the session has started.

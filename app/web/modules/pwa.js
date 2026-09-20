@@ -197,11 +197,19 @@ export function initLiveReload() {
   connect();
 }
 
-export function initPullToRefresh() {
-  const ptr = document.getElementById("ptrIndicator");
-  const spinner = document.getElementById("ptrSpinner");
-  const label = document.getElementById("ptrLabel");
-  if (!ptr || !spinner || !label || !chatViewport) return;
+export function attachPullToRefresh(container, onRefresh) {
+  if (!container) return;
+
+  // Find or create ptr element
+  let ptr = container.querySelector(":scope > .pull-to-refresh");
+  if (!ptr) {
+    ptr = document.createElement("div");
+    ptr.className = "pull-to-refresh";
+    ptr.innerHTML = '<div class="ptr-spinner"></div><span class="ptr-label">Kéo xuống để làm mới</span>';
+    container.prepend(ptr);
+  }
+  const spinner = ptr.querySelector(".ptr-spinner");
+  const label = ptr.querySelector(".ptr-label");
 
   let startY = 0;
   let isPulling = false;
@@ -209,8 +217,8 @@ export function initPullToRefresh() {
   const PTR_THRESHOLD = 55;
   const PTR_MAX = 80;
 
-  chatViewport.addEventListener("touchstart", (e) => {
-    if (chatViewport.scrollTop <= 0) {
+  container.addEventListener("touchstart", (e) => {
+    if (container.scrollTop <= 0) {
       startY = e.touches[0].pageY;
       isPulling = true;
       hasTriggeredHaptic = false;
@@ -219,8 +227,8 @@ export function initPullToRefresh() {
     }
   }, { passive: true });
 
-  chatViewport.addEventListener("touchmove", (e) => {
-    if (!isPulling || chatViewport.scrollTop > 0) return;
+  container.addEventListener("touchmove", (e) => {
+    if (!isPulling || container.scrollTop > 0) return;
     const currentY = e.touches[0].pageY;
     const diff = currentY - startY;
 
@@ -232,22 +240,22 @@ export function initPullToRefresh() {
       ptr.classList.add("visible");
 
       const rotation = Math.min(pullHeight * 5, 360);
-      spinner.style.transform = `rotate(${rotation}deg)`;
+      if (spinner) spinner.style.transform = `rotate(${rotation}deg)`;
 
       if (pullHeight >= PTR_THRESHOLD) {
-        label.innerText = "Thả ra để làm mới";
+        if (label) label.innerText = "Thả ra để làm mới";
         if (!hasTriggeredHaptic) {
           triggerHaptic(20);
           hasTriggeredHaptic = true;
         }
       } else {
-        label.innerText = "Kéo xuống để làm mới";
+        if (label) label.innerText = "Kéo xuống để làm mới";
         hasTriggeredHaptic = false;
       }
     }
   }, { passive: false });
 
-  chatViewport.addEventListener("touchend", () => {
+  container.addEventListener("touchend", async () => {
     if (!isPulling) return;
     isPulling = false;
     const pullHeight = parseFloat(ptr.style.height) || 0;
@@ -255,19 +263,89 @@ export function initPullToRefresh() {
     if (pullHeight >= PTR_THRESHOLD) {
       ptr.style.height = "38px";
       ptr.classList.add("refreshing");
-      label.innerText = "Đang làm mới...";
+      if (label) label.innerText = "Đang làm mới...";
       triggerHaptic(35);
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-        window.location.reload();
-      }, 350);
+
+      if (typeof onRefresh === "function") {
+        try {
+          await onRefresh();
+        } catch (err) {
+          console.warn("[PTR] Lỗi khi làm mới:", err);
+        } finally {
+          ptr.style.height = "0px";
+          ptr.classList.remove("visible", "refreshing");
+          setTimeout(() => {
+            if (spinner) spinner.style.transform = "rotate(0deg)";
+            if (label) label.innerText = "Kéo xuống để làm mới";
+          }, 200);
+        }
+      } else {
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          window.location.reload();
+        }, 350);
+      }
     } else {
       ptr.style.height = "0px";
       ptr.classList.remove("visible");
       setTimeout(() => {
-        spinner.style.transform = "rotate(0deg)";
-        label.innerText = "Kéo xuống để làm mới";
+        if (spinner) spinner.style.transform = "rotate(0deg)";
+        if (label) label.innerText = "Kéo xuống để làm mới";
       }, 200);
     }
   }, { passive: true });
+}
+
+export function initPullToRefresh() {
+  // 1. Màn hình Chat chính: reload toàn bộ trang
+  if (chatViewport) {
+    attachPullToRefresh(chatViewport, () => {
+      window.scrollTo(0, 0);
+      window.location.reload();
+    });
+  }
+
+  // 2. Modal Cài đặt: đồng bộ lại Quota và hồ sơ người dùng
+  const settingsBody = document.querySelector("#settingsModal .modal-body");
+  if (settingsBody) {
+    attachPullToRefresh(settingsBody, async () => {
+      try {
+        const { syncUserProfileFromServer, fetchQuotaFromServer } = await import('./api.js');
+        const { updateHeaderModelDisplay } = await import('./settings.js');
+        await syncUserProfileFromServer();
+        await fetchQuotaFromServer();
+        updateHeaderModelDisplay();
+      } catch (e) {
+        console.warn("[PTR Settings]", e);
+      }
+    });
+  }
+
+  // 3. Menu trượt (Navigation Drawer): đồng bộ Quota AI
+  const drawerBody = document.querySelector(".drawer-body");
+  if (drawerBody) {
+    attachPullToRefresh(drawerBody, async () => {
+      try {
+        const { fetchQuotaFromServer } = await import('./api.js');
+        const { updateHeaderModelDisplay } = await import('./settings.js');
+        await fetchQuotaFromServer();
+        updateHeaderModelDisplay();
+      } catch (e) {
+        console.warn("[PTR Drawer]", e);
+      }
+    });
+  }
+
+  // 4. Modal Kho tài liệu (Vault) nếu có
+  const vaultList = document.getElementById("vaultFileList");
+  if (vaultList) {
+    attachPullToRefresh(vaultList, async () => {
+      try {
+        const { loadVaultFiles } = await import('./vault.js');
+        await loadVaultFiles();
+      } catch (e) {
+        console.warn("[PTR Vault]", e);
+      }
+    });
+  }
 }
