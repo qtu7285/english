@@ -196,7 +196,7 @@ export async function loadAdminUsersList() {
   }
 }
 
-export function openSettingsModal(targetTab = null, closeDrawerFn = null) {
+export function openSettingsModal(targetTab = null, closeDrawerFn = null, updateHash = true) {
   triggerHaptic(15);
   if (typeof closeDrawerFn === "function") closeDrawerFn();
   if (dom.usernameInput) dom.usernameInput.value = state.username || "qtu";
@@ -286,16 +286,17 @@ export function openSettingsModal(targetTab = null, closeDrawerFn = null) {
   // Cập nhật hiển thị động cơ AI và tài khoản liên quan
   updateEngineUI();
 
-  if (targetTab && dom.settingsTabs) {
+  const activeTab = targetTab || "tab-emoji";
+  if (dom.settingsTabs) {
     dom.settingsTabs.querySelectorAll(".modal-tab-btn").forEach(b => {
-      if (b.getAttribute("data-tab") === targetTab) {
+      if (b.getAttribute("data-tab") === activeTab) {
         b.classList.add("active");
       } else {
         b.classList.remove("active");
       }
     });
     document.querySelectorAll("#settingsModal .tab-content").forEach(c => {
-      if (c.id === targetTab) {
+      if (c.id === activeTab) {
         c.classList.add("active");
       } else {
         c.classList.remove("active");
@@ -304,10 +305,22 @@ export function openSettingsModal(targetTab = null, closeDrawerFn = null) {
   }
 
   dom.settingsModal.classList.remove("hidden");
+
+  if (updateHash) {
+    let desiredHash = "#settings";
+    if (activeTab === "tab-ai") desiredHash = "#settings/ai";
+    else if (activeTab === "tab-voice") desiredHash = "#settings/voice";
+    if (window.location.hash !== desiredHash) {
+      window.location.hash = desiredHash;
+    }
+  }
 }
 
-export function closeSettingsModal() {
+export function closeSettingsModal(updateHash = true) {
   if (dom.settingsModal) dom.settingsModal.classList.add("hidden");
+  if (updateHash && window.location.hash.startsWith("#settings")) {
+    history.pushState(null, "", window.location.pathname + window.location.search);
+  }
 }
 
 export function bindSettingsEvents(onSettingsSaved, closeDrawerFn) {
@@ -368,6 +381,13 @@ export function bindSettingsEvents(onSettingsSaved, closeDrawerFn) {
         const tabId = btn.getAttribute("data-tab");
         const target = document.getElementById(tabId);
         if (target) target.classList.add("active");
+
+        let desiredHash = "#settings";
+        if (tabId === "tab-ai") desiredHash = "#settings/ai";
+        else if (tabId === "tab-voice") desiredHash = "#settings/voice";
+        if (window.location.hash !== desiredHash) {
+          history.replaceState(null, "", desiredHash);
+        }
       };
     });
   }

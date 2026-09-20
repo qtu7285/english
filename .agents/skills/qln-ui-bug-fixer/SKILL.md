@@ -60,14 +60,15 @@ flowchart TD
 * **Lỗi tràn màn hình / co giãn**:
   * Kiểm tra viewport meta, safe-area padding (`env(safe-area-inset-*)`).
   * Kiểm tra flexbox, `overflow-y: auto`, `box-sizing: border-box`.
-* **Lỗi tương tác / hiển thị động**:
-  * Kiểm tra logic JavaScript trong `app/web/app.js` (selector DOM, event listeners, class toggle).
+* **Lỗi tương tác / hiển thị động & Deep Linking**:
+  * Kiểm tra logic JavaScript trong `app/web/app.js` và các module trong `app/web/modules/` (selector DOM, event listeners, class toggle).
+  * Kiểm tra URL Hash Routing: Mọi modal/popup (Cài đặt `#settings`, `#settings/ai`, `#settings/voice`, Vault `#vault`) phải đồng bộ URL hash khi đóng/mở/chuyển tab, mở lại đúng view khi F5/refresh, và đóng lại an toàn khi nhấn phím Back của Android/trình duyệt (`hashchange`).
 
 ### Bước 4: Sửa mã nguồn & Xác thực (Patch & Verify)
 * Chỉnh sửa các file liên quan bằng `replace_file_content`:
   * Giao diện HTML: `app/web/index.html`
   * Bảng kiểu CSS: `app/web/style.css`
-  * Kịch bản JS: `app/web/app.js`
+  * Kịch bản JS: `app/web/app.js` hoặc các module trong `app/web/modules/`
   * Bộ đệm Service Worker: `app/web/sw.js` (luôn tăng phiên bản cache `CACHE_NAME`)
   * Máy chủ Go: `app/api/main.go`
 * Nếu có chỉnh sửa backend Go:

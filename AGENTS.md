@@ -9,6 +9,13 @@ Color mapping: `[EN]` uses blue (prefer bright blue/cyan for dark terminals), `[
 
 Do not narrate internal technical operations or tool execution in learner-facing messages. Never output progress logs such as reading files, loading canonical data, checking CSVs, or tool status (e.g. "Đang đọc file...", "Đã nạp file..."). Perform all file inspections, data queries, and tool executions silently in the background. Deliver only direct pedagogical content, test questions, evaluations, and standard status labels.
 
+## Web UI modal & deep linking standard
+
+Mọi giao diện cửa sổ popup / modal / dialog (như Cài đặt `#settings`, `#settings/ai`, `#settings/voice`, Khám phá kho tài liệu `#vault`,...) bắt buộc phải có URL Hash tương ứng:
+* **Deep Linking / Restore**: Khi người dùng tải lại trang (F5 / Refresh) hoặc mở đường dẫn chứa hash, ứng dụng phải tự động mở lại đúng cửa sổ modal và tab tương ứng.
+* **Hardware / Browser Back button**: Khi bấm nút Quay lại (Back) trên trình duyệt hoặc phím điều hướng Android, modal phải tự đóng lại một cách tự nhiên thông qua sự kiện `hashchange` mà không tải lại trang hoặc thoát ứng dụng.
+* **URL Sync**: Khi mở modal, chuyển tab hoặc đóng modal bằng nút bấm / click ra ngoài (backdrop click), URL hash phải được cập nhật đồng bộ (`history.pushState` / `history.replaceState` hoặc gán `window.location.hash`).
+
 ## FAST_CORE — zero-blocking startup
 
 For a new session, DO NOT read local learner or canonical files merely because the session has started.

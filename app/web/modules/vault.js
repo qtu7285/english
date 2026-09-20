@@ -66,25 +66,35 @@ export async function selectVaultFile(file, element) {
   }
 }
 
+export function openVaultModal(updateHash = true) {
+  resetVaultMobileView();
+  if (dom.vaultModal) dom.vaultModal.classList.remove("hidden");
+  loadVaultFiles();
+  if (updateHash && window.location.hash !== "#vault") {
+    window.location.hash = "#vault";
+  }
+}
+
+export function closeVaultModal(updateHash = true) {
+  if (dom.vaultModal) dom.vaultModal.classList.add("hidden");
+  resetVaultMobileView();
+  if (updateHash && window.location.hash === "#vault") {
+    history.pushState(null, "", window.location.pathname + window.location.search);
+  }
+}
+
 export function bindVaultEvents() {
   const refreshVaultBtn = document.getElementById("refreshVaultBtn");
 
   if (dom.vaultBtn && dom.vaultModal) {
-    dom.vaultBtn.onclick = () => {
-      resetVaultMobileView();
-      dom.vaultModal.classList.remove("hidden");
-      loadVaultFiles();
-    };
+    dom.vaultBtn.onclick = () => openVaultModal(true);
 
     if (dom.vaultBackBtn) {
       dom.vaultBackBtn.onclick = resetVaultMobileView;
     }
 
     if (dom.closeVaultBtn) {
-      dom.closeVaultBtn.onclick = () => {
-        dom.vaultModal.classList.add("hidden");
-        resetVaultMobileView();
-      };
+      dom.closeVaultBtn.onclick = () => closeVaultModal(true);
     }
 
     if (refreshVaultBtn) refreshVaultBtn.onclick = () => loadVaultFiles();
@@ -116,8 +126,7 @@ export function bindVaultEvents() {
             dom.messageInput.value = `Hãy phân tích nội dung file ${state.selectedVaultFile.path}:\n\n` + dom.vaultPreview.innerText.slice(0, 1000);
             dom.messageInput.focus();
           }
-          dom.vaultModal.classList.add("hidden");
-          resetVaultMobileView();
+          closeVaultModal(true);
         }
       };
     }

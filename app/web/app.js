@@ -8,13 +8,32 @@ import * as dom from './modules/dom.js';
 import { syncUserProfileFromServer, fetchQuotaFromServer } from './modules/api.js';
 import { bindChatEvents, restoreChatHistory, appendMessage } from './modules/chat.js';
 import { updateContextChips } from './modules/chips.js';
-import { bindSettingsEvents, updateHeaderModelDisplay } from './modules/settings.js';
+import { bindSettingsEvents, updateHeaderModelDisplay, openSettingsModal, closeSettingsModal } from './modules/settings.js';
 import { bindDrawerEvents, closeDrawer } from './modules/drawer.js';
-import { bindVaultEvents } from './modules/vault.js';
+import { bindVaultEvents, openVaultModal, closeVaultModal } from './modules/vault.js';
 import { initPWA, initLiveReload, initPullToRefresh } from './modules/pwa.js';
 
 // Purge legacy OAuth keys left in localStorage
 ["gemini_oauth_token", "oauth_client_id", "oauth_client_secret"].forEach(k => localStorage.removeItem(k));
+
+// Route URL Hash to Modals / Views
+export function handleHashRoute() {
+  const hash = window.location.hash;
+  if (hash.startsWith("#settings")) {
+    let tab = "tab-emoji";
+    if (hash === "#settings/ai") tab = "tab-ai";
+    else if (hash === "#settings/voice") tab = "tab-voice";
+    openSettingsModal(tab, closeDrawer, false);
+  } else {
+    closeSettingsModal(false);
+  }
+
+  if (hash === "#vault") {
+    openVaultModal(false);
+  } else {
+    closeVaultModal(false);
+  }
+}
 
 // Initialize Application
 async function initApp() {
@@ -29,10 +48,12 @@ async function initApp() {
   }, closeDrawer);
   bindVaultEvents();
 
-  // 2. Setup PWA, LiveReload, Gestures
+  // 2. Setup PWA, LiveReload, Gestures & Hash Routing
   initPWA();
   initLiveReload();
   initPullToRefresh();
+  window.addEventListener("hashchange", handleHashRoute);
+  handleHashRoute();
 
   // 3. Restore chat history or show initial prompt
   restoreChatHistory();
@@ -53,10 +74,10 @@ async function initApp() {
 // Global click outside to close modals
 window.onclick = (e) => {
   if (dom.settingsModal && e.target === dom.settingsModal) {
-    dom.settingsModal.classList.add("hidden");
+    closeSettingsModal(true);
   }
   if (dom.vaultModal && e.target === dom.vaultModal) {
-    dom.vaultModal.classList.add("hidden");
+    closeVaultModal(true);
   }
 };
 
