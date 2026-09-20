@@ -1,8 +1,19 @@
-const CACHE_NAME = 'engtutor-v31';
+const CACHE_NAME = 'engtutor-v32';
 const STATIC_ASSETS = [
   '/',
   '/style.css',
   '/app.js',
+  '/modules/state.js',
+  '/modules/dom.js',
+  '/modules/audio.js',
+  '/modules/markdown.js',
+  '/modules/chips.js',
+  '/modules/api.js',
+  '/modules/settings.js',
+  '/modules/drawer.js',
+  '/modules/vault.js',
+  '/modules/chat.js',
+  '/modules/pwa.js',
   '/manifest.json',
   '/icon.svg',
   '/icon-192.png',
