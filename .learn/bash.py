@@ -20,6 +20,7 @@ alias .m='python3 "{workspace_path}/.learn/move.py"; if [ -f "$HOME/.move_cd" ];
 alias .q='python3 "{workspace_path}/.learn/quiz.py"'
 alias .p='python3 "{workspace_path}/.learn/prep.py"'
 alias .t='python3 "{workspace_path}/.learn/tran.py"'
+alias .res='bash "{workspace_path}/app/run.sh"'
 {MARKER_END}"""
 
     try:
@@ -68,6 +69,7 @@ function .m {{
 function .q {{ python "{workspace_path}\\.learn\\quiz.py" }}
 function .p {{ python "{workspace_path}\\.learn\\prep.py" }}
 function .t {{ python "{workspace_path}\\.learn\\tran.py" }}
+function .res {{ bash "{workspace_path}\\app\\run.sh" }}
 {MARKER_END}"""
 
     try:

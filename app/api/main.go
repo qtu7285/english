@@ -491,16 +491,88 @@ func (s *ServerApp) handleVaultSearch(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+var (
+	reAudioPlaceholder = regexp.MustCompile(`(?i)\[(?:audio|speak|play|sound|🔊):\s*([^\]]+)\]`)
+	reVietnameseChars   = regexp.MustCompile(`[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ]`)
+	reQuotedSentence    = regexp.MustCompile(`["“]([A-Za-z0-9\s,.'’!?\-_]{5,})["”]`)
+	reHTMLTags          = regexp.MustCompile(`<[^>]+>`)
+	reMultipleSpaces    = regexp.MustCompile(`\s+`)
+)
+
+func cleanAudioText(s string) string {
+	s = strings.TrimSpace(s)
+	s = reHTMLTags.ReplaceAllString(s, " ")
+	s = strings.ReplaceAll(s, "&quot;", "\"")
+	s = strings.ReplaceAll(s, "&#39;", "'")
+	s = strings.ReplaceAll(s, "&apos;", "'")
+	s = strings.ReplaceAll(s, "&amp;", "&")
+	s = strings.ReplaceAll(s, "&lt;", "<")
+	s = strings.ReplaceAll(s, "&gt;", ">")
+	s = regexp.MustCompile(`[*#` + "`" + `"“”]`).ReplaceAllString(s, "")
+	s = reMultipleSpaces.ReplaceAllString(s, " ")
+	return strings.TrimSpace(s)
+}
+
+// ExtractAudioSentence bóc tách câu tiếng Anh chuẩn từ nội dung phản hồi
+func ExtractAudioSentence(text string) string {
+	// 1. Kiểm tra placeholder [audio:...]
+	matches := reAudioPlaceholder.FindAllStringSubmatch(text, -1)
+	var fallback string
+	for _, m := range matches {
+		if len(m) > 1 {
+			clean := cleanAudioText(m[1])
+			if clean != "" && !reVietnameseChars.MatchString(clean) {
+				words := strings.Fields(clean)
+				if len(words) > 2 {
+					return clean
+				}
+				if fallback == "" {
+					fallback = clean
+				}
+			}
+		}
+	}
+
+	// 2. Kiểm tra câu tiếng Anh đặt trong dấu ngoặc kép
+	quoteMatches := reQuotedSentence.FindAllStringSubmatch(text, -1)
+	for _, q := range quoteMatches {
+		if len(q) > 1 {
+			clean := cleanAudioText(q[1])
+			if clean != "" && !reVietnameseChars.MatchString(clean) && len(strings.Fields(clean)) >= 3 {
+				return clean
+			}
+		}
+	}
+
+	// 3. Kiểm tra câu tiếng Anh đứng trước phần dịch tiếng Việt trong dấu ngoặc đơn
+	lines := strings.Split(text, "\n")
+	for _, line := range lines {
+		cleanLine := cleanAudioText(line)
+		parenIdx := strings.Index(cleanLine, "(")
+		if parenIdx > 0 {
+			left := strings.TrimSpace(cleanLine[:parenIdx])
+			right := cleanLine[parenIdx:]
+			if reVietnameseChars.MatchString(right) && !reVietnameseChars.MatchString(left) && len(strings.Fields(left)) >= 3 {
+				return left
+			}
+		}
+	}
+
+	return fallback
+}
+
 func ClassifyResponse(text string, userMsg string) (string, string, string) {
 	cleanMsg := strings.TrimSpace(userMsg)
+	audioSent := ExtractAudioSentence(text)
+
 	// 1. Test question: Câu 1/5, Câu 2/N, [D1], [D2], [D3] with blanks
 	if (regexp.MustCompile(`(?i)Câu\s+\d+/\d+`).MatchString(text) || regexp.MustCompile(`\[D[1-3]\]`).MatchString(text) || strings.Contains(text, "___")) && !regexp.MustCompile(`(?i)Hoàn thành \d+/\d+ câu`).MatchString(text) {
-		return "test_question", "", ""
+		return "test_question", "", audioSent
 	}
 
 	// 2. Round completed
 	if regexp.MustCompile(`(?i)Hoàn thành \d+/\d+ câu`).MatchString(text) {
-		return "round_completed", "", ""
+		return "round_completed", "", audioSent
 	}
 
 	// 3. Word explanation: has [NEXT] Nhập số câu... or starts with headword pattern
@@ -515,15 +587,15 @@ func ClassifyResponse(text string, userMsg string) (string, string, string) {
 				targetWord = strings.TrimSpace(m[1])
 			}
 		}
-		return "word_explanation", targetWord, ""
+		return "word_explanation", targetWord, audioSent
 	}
 
 	// 4. Test evaluation: [OK], [X], [~]
 	if regexp.MustCompile(`\[OK\]|\[X\]|\[~\]|\[RETRY\]`).MatchString(text) {
-		return "test_evaluation", "", ""
+		return "test_evaluation", "", audioSent
 	}
 
-	return "chat", "", ""
+	return "chat", "", audioSent
 }
 
 func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {

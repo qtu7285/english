@@ -957,6 +957,34 @@ function appendMessage(role, text, toolLogs = [], metadata = {}) {
   return row;
 }
 
+// Quản lý lưu trữ phiên trò chuyện (Chat Session Persistence)
+function saveChatHistory() {
+  try {
+    localStorage.setItem("chat_conversation", JSON.stringify(state.conversation.slice(-30)));
+  } catch (e) {
+    console.warn("[Chat] Không thể lưu lịch sử chat:", e);
+  }
+}
+
+function restoreChatHistory() {
+  try {
+    const saved = localStorage.getItem("chat_conversation");
+    if (!saved) return;
+    const history = JSON.parse(saved);
+    if (!Array.isArray(history) || history.length === 0) return;
+
+    state.conversation = history;
+    if (chatMessages) {
+      chatMessages.innerHTML = "";
+      history.forEach(msg => {
+        appendMessage(msg.role, msg.text, msg.tool_logs || [], msg.metadata || {});
+      });
+    }
+  } catch (e) {
+    console.warn("[Chat] Không thể khôi phục lịch sử chat:", e);
+  }
+}
+
 // Global click delegation for inline audio and copy buttons
 chatMessages.addEventListener("click", (e) => {
   const audioBtn = e.target.closest(".inline-audio-btn, .speak-btn");
@@ -1113,7 +1141,8 @@ async function handleSendMessage(msgText, isRetry = false) {
       appendMessage("assistant", `[X] Lỗi: ${data.error}`, [], { retryText: text });
     } else {
       state.conversation.push({ role: "user", text });
-      state.conversation.push({ role: "assistant", text: data.text });
+      state.conversation.push({ role: "assistant", text: data.text, metadata: data });
+      saveChatHistory();
       appendMessage("assistant", data.text, data.tool_logs, data);
       fetchQuotaFromServer();
 
@@ -1270,6 +1299,7 @@ function startNewChat() {
     </div>
   `;
   state.conversation = [];
+  try { localStorage.removeItem("chat_conversation"); } catch (e) {}
   updateDynamicChoices([]);
   updateContextChips("");
   if (messageInput) {
@@ -2040,8 +2070,11 @@ if (window.isSecureContext && "serviceWorker" in navigator) {
   connect();
 })();
 
-// Khoi tao chip ngu canh ban dau (hien thi tu mau de hoc thu)
-updateContextChips("");
+// Khôi phục phiên trò chuyện trước đó nếu có, ngược lại khởi tạo chip ngữ cảnh ban đầu
+restoreChatHistory();
+if (!state.conversation || state.conversation.length === 0) {
+  updateContextChips("");
+}
 
 // Pull-to-Refresh Gesture Handling cho PWA va trinh duyet di dong
 (function initPullToRefresh() {

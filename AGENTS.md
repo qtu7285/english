@@ -90,6 +90,7 @@ Termux commands (after installing aliases using `.learn/bash.py` and loading `~/
 | `.q` | Chạy công cụ quiz tại thư mục bài học. |
 | `.p` | Chạy công cụ chuẩn bị bài tại thư mục bài học. |
 | `.t` | Chạy công cụ dịch tại thư mục bài học. |
+| `.res` | Khởi chạy máy chủ Web App và API (`app/run.sh`). |
 
 Inside the `.m` browser: `@en` goes to the english repo; `.cd` exits and moves the Termux shell to the selected directory; `.h` shows the browser's full command list; `.q` exits the browser (different from the Termux `.q` quiz alias).
 
