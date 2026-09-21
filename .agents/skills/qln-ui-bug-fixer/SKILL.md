@@ -1,26 +1,26 @@
 ---
 name: qln-ui-bug-fixer
 description: >-
-  Tự động đọc ảnh chụp màn hình giao diện từ http://m55:8080/latest (.b5) hoặc http://zf6:8080/latest (.b6) để phân tích, chẩn đoán và khắc phục lỗi giao diện người dùng (UI bug fix) khi người học kích hoạt lệnh .b5, .b6 hoặc yêu cầu sửa lỗi giao diện trực quan.
+  Tự động đọc ảnh chụp màn hình giao diện từ http://m55:8080/latest (.im5) hoặc http://zf6:8080/latest (.iz6) để phân tích, chẩn đoán và khắc phục lỗi giao diện người dùng (UI bug fix) khi người học kích hoạt lệnh .im5, .iz6 hoặc yêu cầu sửa lỗi giao diện trực quan.
 ---
 
-# QLN UI Bug Fixer (.b5 / .b6)
+# QLN UI Bug Fixer (.im5 / .iz6)
 
 Skill chuyên dụng tự động hóa quy trình tiếp nhận ảnh chụp màn hình lỗi giao diện từ các thiết bị của người học thông qua các endpoint chia sẻ ảnh cục bộ, phân tích trực quan khiếm khuyết UI và trực tiếp sửa mã nguồn.
 
 ---
 
-## 1. Kích hoạt lệnh `.b5` và `.b6`
+## 1. Kích hoạt lệnh `.im5` và `.iz6`
 
 | Lệnh | Thiết bị mục tiêu | Endpoint ảnh chụp màn hình |
-| --- | --- | --- |
-| **`.b5`** | Thiết bị `m55` | `http://m55:8080/latest` |
-| **`.b6`** | Thiết bị `zf6` | `http://zf6:8080/latest` |
+| :--- | :--- | :--- |
+| **`.im5`** | Thiết bị `m55` | `http://m55:8080/latest` |
+| **`.iz6`** | Thiết bị `zf6` | `http://zf6:8080/latest` |
 
-Khi người học gửi tin nhắn `.b5` hoặc `.b6` (hoặc yêu cầu fix bug qua ảnh từ `m55:8080` / `zf6:8080`):
+Khi người học gửi tin nhắn `.im5` hoặc `.iz6` (hoặc yêu cầu fix bug qua ảnh từ `m55:8080` / `zf6:8080`):
 1. **Không coi là từ vựng tiếng Anh**: Tuyệt đối không giải nghĩa từ vựng, không chấm điểm câu trả lời hay thay đổi trạng thái bài học.
 2. **Kích hoạt quy trình 5 bước** dưới đây hoàn toàn tự động và liền mạch.
-3. **Tuân thủ quy ước dấu câu (Punctuation Protocol)**: Nếu tin nhắn kết thúc bằng dấu `?` (ví dụ: `.b6 giao dien hoi roi?`), chỉ thực hiện bước 1, 2, 3 (tải ảnh, xem ảnh, chẩn đoán/thảo luận) và bước 5 (dọn dẹp ảnh tạm), **TUYỆT ĐỐI KHÔNG** thực hiện bước 4 (sửa mã nguồn).
+3. **Tuân thủ quy ước dấu câu (Punctuation Protocol)**: Nếu tin nhắn kết thúc bằng dấu `?` (ví dụ: `.iz6 giao dien hoi roi?`), chỉ thực hiện bước 1, 2, 3 (tải ảnh, xem ảnh, chẩn đoán/thảo luận) và bước 5 (dọn dẹp ảnh tạm), **TUYỆT ĐỐI KHÔNG** thực hiện bước 4 (sửa mã nguồn).
 
 ---
 
@@ -28,18 +28,18 @@ Khi người học gửi tin nhắn `.b5` hoặc `.b6` (hoặc yêu cầu fix bu
 
 ```mermaid
 flowchart TD
-    A[Nhận lệnh .b5 hoặc .b6] --> B[1. Tải ảnh từ endpoint tương ứng]
+    A[Nhận lệnh .im5 hoặc .iz6] --> B[1. Tải ảnh từ endpoint tương ứng]
     B --> C[2. Đọc ảnh bằng view_file]
     C --> D[3. Chẩn đoán khiếm khuyết UI trực quan]
     D --> E[4. Sửa mã nguồn app/web hoặc app/api]
     E --> F[5. Dọn dẹp scratch & Báo cáo kết quả]
-    F --> G[Nhắc xác nhận Git .g]
+    F --> G[Nhắc xác nhận Git .git]
 ```
 
 ### Bước 1: Thu thập ảnh mới nhất (Fetch Screenshot)
 * Xác định endpoint theo lệnh:
-  * `.b5` ➔ `http://m55:8080/latest`
-  * `.b6` ➔ `http://zf6:8080/latest`
+  * `.im5` ➔ `http://m55:8080/latest`
+  * `.iz6` ➔ `http://zf6:8080/latest`
 * Chạy lệnh tải ảnh từ máy chủ ảnh nội bộ về thư mục scratch của phiên làm việc:
   ```bash
   curl -sI <ENDPOINT_URL> && curl -sL <ENDPOINT_URL> -o "<artifact_dir>/scratch/latest_bug.jpg"
@@ -85,5 +85,5 @@ flowchart TD
   3. **Giải pháp đã thực hiện**: Tóm tắt các file đã sửa đổi và cơ chế khắc phục.
 * **Luôn kết thúc bằng câu hỏi xác nhận Git**:
   ```text
-  [CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .g không?
+  [CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .git không?
   ```

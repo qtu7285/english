@@ -36,7 +36,7 @@
         <div class="brand">
           <div class="brand-logo">EN</div>
           <div class="brand-info">
-            <h1>Q-English <span class="header-version-badge">v1.0.5</span></h1>
+            <h1>Q-English <span class="header-version-badge">v1.0.6</span></h1>
             <div class="header-model-badge" id="headerModelBadge" title="Đổi mô hình AI">
               <span class="status-indicator online" id="headerModelIndicator"></span>
               <span class="header-model-label" id="headerModelLabel">3.6 Flash</span>
@@ -53,11 +53,7 @@
           </div>
         </div>
       </div>
-        <button class="user-badge-btn" id="headerUserBtn" title="Tài khoản / Đăng nhập" aria-label="Tài khoản">
-          <span class="user-badge-avatar" id="headerUserAvatar">🎡</span>
-          <span class="user-badge-name" id="headerUserName">qtu</span>
-          <span class="user-badge-role admin" id="headerUserRole">Admin</span>
-        </button>
+      <div class="header-actions">
         <button class="icon-btn pwa-btn pwa-hidden" id="installPwaBtn" title="Cài đặt App về màn hình chính">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -83,28 +79,28 @@
           <div class="header-dropdown-menu hidden" id="headerMoreMenu" role="menu">
             <button class="dropdown-item" id="menuSaveBtn" type="button" role="menuitem">
               <span class="dropdown-icon">💾</span>
-              <span class="dropdown-label">Lưu tiến độ</span>
+              <span class="dropdown-label">Lưu tiến độ (.sav)</span>
             </button>
             <button class="dropdown-item" id="menuGitBtn" type="button" role="menuitem">
               <span class="dropdown-icon">🔄</span>
-              <span class="dropdown-label">Đồng bộ Git</span>
+              <span class="dropdown-label">Đồng bộ Git (.git)</span>
             </button>
             <button class="dropdown-item" id="menuHelpBtn" type="button" role="menuitem">
               <span class="dropdown-icon">❓</span>
-              <span class="dropdown-label">Hướng dẫn sử dụng</span>
+              <span class="dropdown-label">Hướng dẫn (.hlp)</span>
             </button>
             <button class="dropdown-item" id="menuLogoutBtn" type="button" role="menuitem">
               <span class="dropdown-icon">🚪</span>
               <span class="dropdown-label">Đăng xuất</span>
             </button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" id="menuBugFixB5Btn" type="button" role="menuitem">
+            <button class="dropdown-item" id="menuBugFixIm5Btn" type="button" role="menuitem">
               <span class="dropdown-icon">📱</span>
-              <span class="dropdown-label">Sửa lỗi UI m55</span>
+              <span class="dropdown-label">Sửa lỗi UI m55 (.im5)</span>
             </button>
-            <button class="dropdown-item" id="menuBugFixB6Btn" type="button" role="menuitem">
+            <button class="dropdown-item" id="menuBugFixIz6Btn" type="button" role="menuitem">
               <span class="dropdown-icon">🛠️</span>
-              <span class="dropdown-label">Sửa lỗi UI zf6</span>
+              <span class="dropdown-label">Sửa lỗi UI zf6 (.iz6)</span>
             </button>
           </div>
         </div>
@@ -323,10 +319,7 @@
         <div class="modal-header">
           <div class="modal-title-wrap">
             <span class="modal-icon">🔐</span>
-            <div>
-              <h2 id="loginModalTitle">Đăng nhập tài khoản</h2>
-              <span class="modal-sub">Chọn tài khoản hoặc đăng nhập mạng xã hội</span>
-            </div>
+            <h2 id="loginModalTitle">Đăng nhập</h2>
           </div>
           <button class="icon-btn modal-close-btn" id="closeLoginBtn" title="Đóng cửa sổ" aria-label="Đóng cửa sổ">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -339,20 +332,20 @@
         <div class="modal-body login-modal-body">
           <!-- Quick Account Switch Buttons -->
           <div class="login-quick-select">
-            <span class="login-section-lbl">Chọn nhanh người học:</span>
+            <span class="login-section-lbl">Người học:</span>
             <div class="login-quick-btns">
               <button type="button" class="quick-user-btn active" data-user="qtu" data-pass="111">
                 <span class="quick-user-avatar">🎡</span>
                 <div class="quick-user-info">
                   <span class="quick-user-name">qtu</span>
-                  <span class="quick-user-tag admin">Admin (Full)</span>
+                  <span class="quick-user-tag admin">Admin</span>
                 </div>
               </button>
               <button type="button" class="quick-user-btn" data-user="gty" data-pass="777">
                 <span class="quick-user-avatar">🧑‍🎓</span>
                 <div class="quick-user-info">
                   <span class="quick-user-name">gty</span>
-                  <span class="quick-user-tag user">User (Học)</span>
+                  <span class="quick-user-tag user">User</span>
                 </div>
               </button>
             </div>
@@ -375,7 +368,7 @@
           </form>
 
           <div class="login-divider">
-            <span>hoặc đăng nhập bằng</span>
+            <span>hoặc</span>
           </div>
 
           <!-- Social Login Buttons -->
@@ -435,35 +428,35 @@
           <button class="drawer-nav-item" id="navSaveBtn" type="button">
             <span class="nav-icon">💾</span>
             <div class="nav-info">
-              <span class="nav-title">Lưu tiến độ</span>
+              <span class="nav-title">Lưu tiến độ (.sav)</span>
               <span class="nav-desc">Lưu bài học & từ vựng đủ điều kiện</span>
             </div>
           </button>
           <button class="drawer-nav-item" id="navGitBtn" type="button">
             <span class="nav-icon">🔄</span>
             <div class="nav-info">
-              <span class="nav-title">Đồng bộ Git</span>
+              <span class="nav-title">Đồng bộ Git (.git)</span>
               <span class="nav-desc">Commit và đẩy dữ liệu lên GitHub</span>
             </div>
           </button>
           <button class="drawer-nav-item" id="navHelpBtn" type="button">
             <span class="nav-icon">❓</span>
             <div class="nav-info">
-              <span class="nav-title">Hướng dẫn sử dụng</span>
+              <span class="nav-title">Hướng dẫn sử dụng (.hlp)</span>
               <span class="nav-desc">Xem hướng dẫn các lệnh trong app</span>
             </div>
           </button>
-          <button class="drawer-nav-item" id="navBugFixB5Btn" type="button">
+          <button class="drawer-nav-item" id="navBugFixIm5Btn" type="button">
             <span class="nav-icon">📱</span>
             <div class="nav-info">
-              <span class="nav-title">Sửa lỗi UI m55</span>
+              <span class="nav-title">Sửa lỗi UI m55 (.im5)</span>
               <span class="nav-desc">Tự quét ảnh m55 và sửa lỗi</span>
             </div>
           </button>
-          <button class="drawer-nav-item" id="navBugFixB6Btn" type="button">
+          <button class="drawer-nav-item" id="navBugFixIz6Btn" type="button">
             <span class="nav-icon">🛠️</span>
             <div class="nav-info">
-              <span class="nav-title">Sửa lỗi UI zf6</span>
+              <span class="nav-title">Sửa lỗi UI zf6 (.iz6)</span>
               <span class="nav-desc">Tự quét ảnh zf6 và sửa lỗi</span>
             </div>
           </button>
@@ -499,29 +492,30 @@
           <span>Cài đặt ứng dụng</span>
         </button>
 
-        <button class="drawer-user-card" id="drawerUserCard" type="button" title="Quản lý hồ sơ & Emoji người học">
-          <div class="user-avatar-badge" id="drawerUserAvatar">🧑‍🎓</div>
-          <div class="user-info-text">
-            <span class="user-name" id="drawerUserName">qtu</span>
-            <span class="user-badge">Người học • Emoji & Hồ sơ</span>
+        <div class="drawer-user-card" id="drawerUserCard">
+          <div class="user-card-main" id="drawerUserMain" title="Quản lý hồ sơ & Emoji người học">
+            <div class="user-avatar-badge" id="drawerUserAvatar">🧑‍🎓</div>
+            <div class="user-info-text">
+              <span class="user-name" id="drawerUserName">qtu</span>
+              <span class="user-badge" id="drawerUserSub">Quản trị viên</span>
+            </div>
           </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="user-chevron">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-
-        <button class="drawer-logout-btn" id="drawerLogoutBtn" type="button" title="Đăng xuất tài khoản">
-          <span class="nav-icon">🚪</span>
-          <span>Đăng xuất (<span id="drawerLogoutUsername">qtu</span>)</span>
-        </button>
+          <button class="user-logout-icon-btn" id="drawerLogoutBtn" type="button" title="Đăng xuất tài khoản" aria-label="Đăng xuất">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
+        </div>
 
         <div class="drawer-version-info">
-          <span>Q-English v1.0.5</span>
+          <span>Q-English v1.0.6</span>
         </div>
       </div>
     </aside>
   </div>
 
-  <script type="module" src="app.js?v=1.0.5"></script>
+  <script type="module" src="app.js?v=1.0.6"></script>
 </body>
 </html>

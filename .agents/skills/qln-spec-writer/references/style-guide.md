@@ -40,6 +40,6 @@ Mỗi khi AI thực hiện xong các chỉnh sửa code, file spec, hoặc cấu
 1. Tóm tắt ngắn gọn các file đã tạo hoặc cập nhật.
 2. Đặt câu hỏi xác nhận Git chuẩn:
    ```text
-   [CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .g không?
+   [CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .git không?
    ```
-*(Lưu ý: Không tự ý commit khi người học chưa đồng ý hoặc chưa gõ `.g`).*
+*(Lưu ý: Không tự ý commit khi người học chưa đồng ý hoặc chưa gõ `.git`).*

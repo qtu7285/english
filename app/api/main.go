@@ -56,9 +56,11 @@ Rules:
      * End with: [NEXT] Nhập số câu để luyện tiếp (ví dụ 5), hoặc .từ_mới để chuyển từ.
 
 5. Commands:
-   - '.s': Confirm learning progress is saved.
-   - '.g': Git sync status.
-   - '.help': Show available commands.
+   - '.sav': Confirm learning progress is saved.
+   - '.git': Git sync status.
+   - '.hlp': Show available commands.
+   - '.im5': Scan and fix UI bug from m55.
+   - '.iz6': Scan and fix UI bug from zf6.
 
 6. Pronunciation Placeholder (CRITICAL for Audio):
    Whenever presenting an English headword, phrase, example sentence, or test question, append an audio placeholder:
@@ -671,7 +673,7 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Kiểm tra quyền quản trị cho các lệnh can thiệp hệ thống (.b5, .b6, .g)
+	// Kiểm tra quyền quản trị cho các lệnh can thiệp hệ thống (.im5, .iz6, .g)
 	callerToken := s.GetTokenFromRequest(r)
 	callerUsername := s.GetUserFromToken(callerToken)
 	if callerUsername == "" {
@@ -682,7 +684,7 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	trimmedMsg := strings.ToLower(msg)
-	if (trimmedMsg == ".b5" || trimmedMsg == ".b6" || trimmedMsg == ".g") && !s.CheckUserIsAdmin(callerUsername) {
+	if (trimmedMsg == ".im5" || trimmedMsg == ".iz6" || trimmedMsg == ".git" || trimmedMsg == ".g") && !s.CheckUserIsAdmin(callerUsername) {
 		sendJSON(w, http.StatusOK, map[string]interface{}{
 			"type":      "chat",
 			"text":      fmt.Sprintf("[X] Lệnh '%s' chỉ khả dụng cho tài khoản Quản trị viên (qtu).", msg),

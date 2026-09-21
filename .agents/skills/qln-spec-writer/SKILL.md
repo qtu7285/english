@@ -51,7 +51,7 @@ Khi tạo một tài liệu đặc tả mới, bám sát cấu trúc trong [Mẫ
    - Tóm tắt ngắn gọn các nội dung vừa tạo hoặc cập nhật.
    - **Luôn kết thúc bằng câu hỏi xác nhận Git:**
      ```text
-     [CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .g không?
+     [CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .git không?
      ```
 
 ---

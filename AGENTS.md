@@ -70,9 +70,9 @@ After finishing a word/phrase or `.headword` explanation, when no test answer is
 
 This reminder uses only the visible target and temporary session state; do not load canonical/learner files merely to show it. Wait for the learner's choice, then route an actual test request or target switch through the existing rules. Do not append it to pending test questions, correction/re-entry prompts, or unrelated technical/configuration replies.
 
-### Help shortcut `.help`
+### Help shortcut `.hlp`
 
-When the entire trimmed message is exactly `.help`, show the supported-command reference below in Vietnamese. Recognize `.help` before lexical `.headword` handling and before grading. It is a chat control command, not a request to explain the English word “help” or execute the commands in the reference.
+When the entire trimmed message is exactly `.hlp` (hoặc `.help`), show the supported-command reference below in Vietnamese. Recognize `.hlp` before lexical `.headword` handling and before grading. It is a chat control command, not a request to explain the English word “help” or execute the commands in the reference.
 
 * Answer directly from this reference; do not load README, plans, learner history, CSVs, or skills merely to display help. Do not use shell, clipboard, or speech tools just to show this help.
 * Preserve the visible target, learner, unsaved material, requested test count, and any pending question, attempts, first-try status, correction/re-entry state, and round position. Do not grade, count an attempt, save, switch targets, or advance a round.
@@ -84,15 +84,15 @@ Chat commands:
 
 | Input | Explanation to show |
 | --- | --- |
-| `.help` | Xem danh sách lệnh và cách dùng. |
+| `.hlp` | Xem danh sách lệnh và cách dùng. |
 | `.từ` (ví dụ `.urge`) | Học hoặc chuyển sang từ đó: nghĩa, cách dùng, ví dụ, phát âm khi có. |
 | Từ, cụm từ hoặc câu tiếng Anh | Giải nghĩa; với câu, giải thích cấu trúc và sửa lỗi nếu cần. |
 | Số nguyên dương (ví dụ `5`) | Luyện số câu đã chọn cho từ đang học, khi không có câu đang chờ trả lời. |
 | `#username` (ví dụ `#qtu`) | Chọn người học cho phiên hiện tại. |
-| `.s` | Lưu ngay phần học đủ điều kiện đã hoàn thành; tiếp tục câu đang chờ. |
-| `.g` | Kiểm tra, commit thay đổi phù hợp và push Git; tiếp tục câu đang chờ. |
-| `.b5` | Đọc ảnh từ `http://m55:8080/latest`, phân tích lỗi UI và sửa code tự động. |
-| `.b6` | Đọc ảnh từ `http://zf6:8080/latest`, phân tích lỗi UI và sửa code tự động. |
+| `.sav` | Lưu ngay phần học đủ điều kiện đã hoàn thành; tiếp tục câu đang chờ. |
+| `.git` | Kiểm tra, commit thay đổi phù hợp và push Git; tiếp tục câu đang chờ. |
+| `.im5` | Đọc ảnh từ `http://m55:8080/latest`, phân tích lỗi UI và sửa code tự động. |
+| `.iz6` | Đọc ảnh từ `http://zf6:8080/latest`, phân tích lỗi UI và sửa code tự động. |
 | `.` (đứng một mình) | Đồng ý thực thi đề xuất/gợi ý gần nhất của AI. |
 | Câu kết thúc bằng `?` | Chỉ thảo luận, phân tích; tuyệt đối không sửa/ghi file. |
 | Câu kết thúc bằng `.` | Cho phép AI tự động ghi/sửa file nếu hợp lý mà không cần hỏi lại. |
@@ -110,37 +110,37 @@ Termux commands (after installing aliases using `.learn/bash.py` and loading `~/
 
 Inside the `.m` browser: `@en` goes to the english repo; `.cd` exits and moves the Termux shell to the selected directory; `.h` shows the browser's full command list; `.q` exits the browser (different from the Termux `.q` quiz alias).
 
-`.help` is an AI chat command; it is not currently a Termux shell alias. The `.q/.p/.t` lesson tools use the legacy lesson workflow, separate from the AI's WORDS CSV practice.
+`.hlp` is an AI chat command; it is not currently a Termux shell alias. The `.q/.p/.t` lesson tools use the legacy lesson workflow, separate from the AI's WORDS CSV practice.
 
-### Bug fix shortcuts `.b5` and `.b6`
+### Bug fix shortcuts `.im5` and `.iz6`
 
-When the learner's entire trimmed message is exactly `.b5` or `.b6`, treat it as an automated visual bug-fixing command, never as an English answer or a normal learning request.
+When the learner's entire trimmed message is exactly `.im5` or `.iz6`, treat it as an automated visual bug-fixing command, never as an English answer or a normal learning request.
 
 * Do not treat it as an English word explanation, answer, or test attempt.
 * Activate the `qln-ui-bug-fixer` skill.
 * Target endpoint:
-  * `.b5`: `http://m55:8080/latest` (device `m55`)
-  * `.b6`: `http://zf6:8080/latest` (device `zf6`)
+  * `.im5`: `http://m55:8080/latest` (device `m55`)
+  * `.iz6`: `http://zf6:8080/latest` (device `zf6`)
 * Automatically download the latest screenshot from the target endpoint to the session scratch directory.
 * Visually inspect the image using `view_file` to diagnose UI defects, layout shifts, or broken elements.
 * Apply fixes directly to `app/web/` or `app/api/`, recompile/restart server if needed, verify, and clean up temporary files.
-* If the message ends with `?` (e.g. `.b6 giao dien hoi roi?`), follow the punctuation control protocol: do not edit code; only fetch and visually inspect the image to diagnose and discuss findings.
-* Report the diagnosed bug and applied fixes clearly, and conclude with: `[CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .g không?`
+* If the message ends with `?` (e.g. `.iz6 giao dien hoi roi?`), follow the punctuation control protocol: do not edit code; only fetch and visually inspect the image to diagnose and discuss findings.
+* Report the diagnosed bug and applied fixes clearly, and conclude with: `[CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .git không?`
 
-### Git shortcut `.g`
+### Git shortcut `.git`
 
-When the learner's entire trimmed message is exactly `.g`, treat it as a Git publish command, never as an English answer or a normal learning request.
+When the learner's entire trimmed message is exactly `.git`, treat it as a Git publish command, never as an English answer or a normal learning request.
 
-* If a test question is pending, recognize `.g` before grading; preserve the question, attempts, correction state, and round position, then resume it after the Git operation.
+* If a test question is pending, recognize `.git` before grading; preserve the question, attempts, correction state, and round position, then resume it after the Git operation.
 * Review the worktree, stage the intended verified tutoring-rule/data changes, create one focused commit when there are changes, and push the current branch to its configured upstream remote.
 * If there are no local changes, do not create an empty commit; still verify whether the current branch is synchronized with its upstream and push only if there is an unpushed commit.
 * Report the actual commit and push result. Never claim success when authentication, permissions, network, tests, or push checks fail. Keep local commits intact when push fails and explain the blocker.
-* `.g` is a control command and must not be counted as a test attempt, answer, or completed question. It does not save learner CSV progress unless the Git commit happens to include already-written local CSV changes.
-* After completing any system modification, spec authoring, tool enhancement, or skill update, summarize the completed changes and explicitly ask whether the learner wants to commit and push via `.g`: `[CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .g không?`
+* `.git` is a control command and must not be counted as a test attempt, answer, or completed question. It does not save learner CSV progress unless the Git commit happens to include already-written local CSV changes.
+* After completing any system modification, spec authoring, tool enhancement, or skill update, summarize the completed changes and explicitly ask whether the learner wants to commit and push via `.git`: `[CONFIRM] Bạn có muốn commit và push các thay đổi này lên Git bằng lệnh .git không?`
 
-### Save shortcut `.s`
+### Save shortcut `.sav`
 
-When the learner's entire trimmed message is exactly `.s`, treat it as an immediate save command. It saves eligible completed learner/shared session material to CSV through `SAVE-WORKFLOW.md`, without a second confirmation, then resumes any pending test question. `.s` is never graded as an answer. (For a standalone `.`, see the Punctuation control protocol below).
+When the learner's entire trimmed message is exactly `.sav`, treat it as an immediate save command. It saves eligible completed learner/shared session material to CSV through `SAVE-WORKFLOW.md`, without a second confirmation, then resumes any pending test question. `.sav` is never graded as an answer. (For a standalone `.`, see the Punctuation control protocol below).
 
 ### Punctuation control protocol (?, ., and standalone .)
 
@@ -150,7 +150,7 @@ The learner uses sentence-ending punctuation and standalone markers to control e
   * Represents an inquiry, question, or discussion.
   * **Strict read/discuss-only mode**: You are **STRICTLY FORBIDDEN** from modifying, creating, or deleting files, or executing state-mutating commands.
   * Only analyze, diagnose, explain, discuss, and propose solutions or suggestions.
-  * Even if a command shortcut like `.b5` or `.b6` is mentioned (e.g. `.b6 giao dien hoi roi?`), inspect and discuss only; do not edit code.
+  * Even if a command shortcut like `.im5` or `.iz6` is mentioned (e.g. `.iz6 giao dien hoi roi?`), inspect and discuss only; do not edit code.
 
 * **Message ending with `.` (with text content)**:
   * Authorizes direct action.

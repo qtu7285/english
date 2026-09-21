@@ -4,11 +4,13 @@
 import { state } from './state.js';
 import { triggerHaptic } from './audio.js';
 import { syncUserProfileFromServer } from './api.js';
+import { closeDrawer } from './drawer.js';
 
 let onAuthChangedCallback = null;
 
 export function openLoginModal(pushHistory = true) {
   triggerHaptic(15);
+  closeDrawer();
   const modal = document.getElementById("loginModal");
   if (modal) {
     modal.classList.remove("hidden");
@@ -56,30 +58,30 @@ export function applyRoleUI(role, username) {
   // 2. Cập nhật thông tin người dùng trong Drawer
   const drawerUserName = document.getElementById("drawerUserName");
   const drawerUserAvatar = document.getElementById("drawerUserAvatar");
-  const drawerLogoutUsername = document.getElementById("drawerLogoutUsername");
+  const drawerUserSub = document.getElementById("drawerUserSub");
   if (drawerUserName) drawerUserName.textContent = username;
   if (drawerUserAvatar) drawerUserAvatar.textContent = state.avatarUser || (isAdmin ? "🎡" : "🧑‍🎓");
-  if (drawerLogoutUsername) drawerLogoutUsername.textContent = username;
+  if (drawerUserSub) drawerUserSub.textContent = isAdmin ? "Quản trị viên" : "Người học";
 
   // 3. Phân quyền hiển thị các menu kỹ thuật (Admin vs User)
   // Dropdown More Menu
-  const menuBugFixB5Btn = document.getElementById("menuBugFixB5Btn");
-  const menuBugFixB6Btn = document.getElementById("menuBugFixB6Btn");
+  const menuBugFixIm5Btn = document.getElementById("menuBugFixIm5Btn");
+  const menuBugFixIz6Btn = document.getElementById("menuBugFixIz6Btn");
   const menuGitBtn = document.getElementById("menuGitBtn");
   const dropdownDividers = document.querySelectorAll(".dropdown-menu .dropdown-divider");
 
-  if (menuBugFixB5Btn) menuBugFixB5Btn.style.display = isAdmin ? "" : "none";
-  if (menuBugFixB6Btn) menuBugFixB6Btn.style.display = isAdmin ? "" : "none";
+  if (menuBugFixIm5Btn) menuBugFixIm5Btn.style.display = isAdmin ? "" : "none";
+  if (menuBugFixIz6Btn) menuBugFixIz6Btn.style.display = isAdmin ? "" : "none";
   if (menuGitBtn) menuGitBtn.style.display = isAdmin ? "" : "none";
   dropdownDividers.forEach(d => d.style.display = isAdmin ? "" : "none");
 
   // Drawer Nav List
   const navGitBtn = document.getElementById("navGitBtn");
-  const navBugFixB5Btn = document.getElementById("navBugFixB5Btn");
-  const navBugFixB6Btn = document.getElementById("navBugFixB6Btn");
+  const navBugFixIm5Btn = document.getElementById("navBugFixIm5Btn");
+  const navBugFixIz6Btn = document.getElementById("navBugFixIz6Btn");
   if (navGitBtn) navGitBtn.style.display = isAdmin ? "" : "none";
-  if (navBugFixB5Btn) navBugFixB5Btn.style.display = isAdmin ? "" : "none";
-  if (navBugFixB6Btn) navBugFixB6Btn.style.display = isAdmin ? "" : "none";
+  if (navBugFixIm5Btn) navBugFixIm5Btn.style.display = isAdmin ? "" : "none";
+  if (navBugFixIz6Btn) navBugFixIz6Btn.style.display = isAdmin ? "" : "none";
 
   // Drawer AI Quota & Account Switch
   const drawerAiQuotaCard = document.getElementById("drawerAiQuotaCard");
@@ -299,7 +301,10 @@ export function bindAuthEvents(onAuthChanged) {
   }
   const drawerLogoutBtn = document.getElementById("drawerLogoutBtn");
   if (drawerLogoutBtn) {
-    drawerLogoutBtn.onclick = logoutUser;
+    drawerLogoutBtn.onclick = (e) => {
+      e.stopPropagation();
+      logoutUser();
+    };
   }
 
   // Social Login: Google & Facebook

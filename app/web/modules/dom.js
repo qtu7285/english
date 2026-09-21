@@ -52,8 +52,8 @@ export const drawerUserAvatar = document.getElementById("drawerUserAvatar");
 export const drawerUserName = document.getElementById("drawerUserName");
 export const navSaveBtn = document.getElementById("navSaveBtn");
 export const navGitBtn = document.getElementById("navGitBtn");
-export const navBugFixB5Btn = document.getElementById("navBugFixB5Btn");
-export const navBugFixB6Btn = document.getElementById("navBugFixB6Btn") || document.getElementById("navBugFixBtn");
+export const navBugFixIm5Btn = document.getElementById("navBugFixIm5Btn");
+export const navBugFixIz6Btn = document.getElementById("navBugFixIz6Btn");
 export const navHelpBtn = document.getElementById("navHelpBtn");
 
 // Header More Menu Elements
@@ -62,8 +62,8 @@ export const headerMoreMenu = document.getElementById("headerMoreMenu");
 export const menuSaveBtn = document.getElementById("menuSaveBtn");
 export const menuGitBtn = document.getElementById("menuGitBtn");
 export const menuHelpBtn = document.getElementById("menuHelpBtn");
-export const menuBugFixB5Btn = document.getElementById("menuBugFixB5Btn");
-export const menuBugFixB6Btn = document.getElementById("menuBugFixB6Btn");
+export const menuBugFixIm5Btn = document.getElementById("menuBugFixIm5Btn");
+export const menuBugFixIz6Btn = document.getElementById("menuBugFixIz6Btn");
 
 // Drawer Quota & Accounts
 export const drawerAiQuotaCard = document.getElementById("drawerAiQuotaCard");

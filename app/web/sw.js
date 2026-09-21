@@ -1,4 +1,4 @@
-const CACHE_NAME = 'q-english-v1.0.5';
+const CACHE_NAME = 'q-english-v1.0.6';
 const STATIC_ASSETS = [
   '/',
   '/style.css',
@@ -9,6 +9,7 @@ const STATIC_ASSETS = [
   '/modules/markdown.js',
   '/modules/chips.js',
   '/modules/api.js',
+  '/modules/auth.js',
   '/modules/settings.js',
   '/modules/drawer.js',
   '/modules/vault.js',

@@ -425,7 +425,12 @@ export function bindSettingsEvents(onSettingsSaved, closeDrawerFn) {
       openSettingsModal("tab-ai", closeDrawerFn);
     };
   }
-  if (dom.drawerUserCard) dom.drawerUserCard.onclick = () => openSettingsModal("tab-emoji", closeDrawerFn);
+  if (dom.drawerUserCard) {
+    dom.drawerUserCard.onclick = (e) => {
+      if (e.target.closest("#drawerLogoutBtn")) return;
+      openSettingsModal("tab-emoji", closeDrawerFn);
+    };
+  }
   if (dom.closeSettingsBtn) dom.closeSettingsBtn.onclick = closeSettingsModal;
 
   if (dom.ttsRate) {

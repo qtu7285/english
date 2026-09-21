@@ -27,11 +27,11 @@ export function bindDrawerEvents(onSendShortcut) {
   });
 
   const shortcuts = [
-    { btn: dom.navSaveBtn, cmd: ".s" },
-    { btn: dom.navGitBtn, cmd: ".g" },
-    { btn: dom.navBugFixB5Btn, cmd: ".b5" },
-    { btn: dom.navBugFixB6Btn, cmd: ".b6" },
-    { btn: dom.navHelpBtn, cmd: ".help" }
+    { btn: dom.navSaveBtn, cmd: ".sav" },
+    { btn: dom.navGitBtn, cmd: ".git" },
+    { btn: dom.navBugFixIm5Btn, cmd: ".im5" },
+    { btn: dom.navBugFixIz6Btn, cmd: ".iz6" },
+    { btn: dom.navHelpBtn, cmd: ".hlp" }
   ];
 
   shortcuts.forEach(({ btn, cmd }) => {
@@ -73,11 +73,11 @@ export function bindDrawerEvents(onSendShortcut) {
     });
 
     const moreShortcuts = [
-      { btn: dom.menuSaveBtn, cmd: ".s" },
-      { btn: dom.menuGitBtn, cmd: ".g" },
-      { btn: dom.menuHelpBtn, cmd: ".help" },
-      { btn: dom.menuBugFixB5Btn, cmd: ".b5" },
-      { btn: dom.menuBugFixB6Btn, cmd: ".b6" }
+      { btn: dom.menuSaveBtn, cmd: ".sav" },
+      { btn: dom.menuGitBtn, cmd: ".git" },
+      { btn: dom.menuHelpBtn, cmd: ".hlp" },
+      { btn: dom.menuBugFixIm5Btn, cmd: ".im5" },
+      { btn: dom.menuBugFixIz6Btn, cmd: ".iz6" }
     ];
 
     moreShortcuts.forEach(({ btn, cmd }) => {
