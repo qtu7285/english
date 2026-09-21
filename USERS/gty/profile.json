@@ -1,16 +1,16 @@
 {
-  "username": "qtu",
-  "display_name": "qtu",
-  "password": "111",
-  "avatar_user": "🎡",
+  "username": "gty",
+  "display_name": "gty",
+  "password": "777",
+  "avatar_user": "🧑‍🎓",
   "avatar_ai": "🤖",
   "avatar_target": "🎯",
   "show_chat_avatars": false,
-  "role": "admin",
-  "can_view_ai_info": true,
+  "role": "user",
+  "can_view_ai_info": false,
   "ai_engine": "antigravity",
   "gemini_model": "gemini-3.6-flash",
-  "tts_rate": 1,
+  "tts_rate": 0.9,
   "sessions": [],
   "updated_at": "2026-09-20T14:30:00Z"
 }

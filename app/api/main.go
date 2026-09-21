@@ -202,22 +202,45 @@ func (s *ServerApp) handleStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type UserSession struct {
+	Token     string `json:"token"`
+	CreatedAt string `json:"created_at"`
+	ExpiresAt string `json:"expires_at"`
+}
+
 type UserProfile struct {
-	Username        string  `json:"username"`
-	DisplayName     string  `json:"display_name"`
-	AvatarUser      string  `json:"avatar_user"`
-	AvatarAI        string  `json:"avatar_ai"`
-	AvatarTarget    string  `json:"avatar_target,omitempty"`
-	ShowChatAvatars *bool   `json:"show_chat_avatars,omitempty"`
-	Role            string  `json:"role,omitempty"`
-	CanViewAIInfo   *bool   `json:"can_view_ai_info,omitempty"`
-	AIEngine        string  `json:"ai_engine,omitempty"`
-	GeminiModel     string  `json:"gemini_model,omitempty"`
-	TTSRate         float64 `json:"tts_rate,omitempty"`
-	UpdatedAt       string  `json:"updated_at,omitempty"`
+	Username        string                 `json:"username"`
+	DisplayName     string                 `json:"display_name"`
+	Password        string                 `json:"password,omitempty"`
+	Email           string                 `json:"email,omitempty"`
+	AvatarUser      string                 `json:"avatar_user"`
+	AvatarAI        string                 `json:"avatar_ai"`
+	AvatarTarget    string                 `json:"avatar_target,omitempty"`
+	ShowChatAvatars *bool                  `json:"show_chat_avatars,omitempty"`
+	Role            string                 `json:"role,omitempty"`
+	CanViewAIInfo   *bool                  `json:"can_view_ai_info,omitempty"`
+	AIEngine        string                 `json:"ai_engine,omitempty"`
+	GeminiModel     string                 `json:"gemini_model,omitempty"`
+	TTSRate         float64                `json:"tts_rate,omitempty"`
+	AuthProviders   map[string]interface{} `json:"auth_providers,omitempty"`
+	Sessions        []UserSession          `json:"sessions,omitempty"`
+	UpdatedAt       string                 `json:"updated_at,omitempty"`
 }
 
 var validUserRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]*$`)
+
+// CheckUserIsAdmin kiểm tra xem user có quyền quản trị hay không
+func (s *ServerApp) CheckUserIsAdmin(username string) bool {
+	username = strings.ToLower(strings.TrimSpace(username))
+	if username == "" || username == "qtu" {
+		return true
+	}
+	prof, err := s.GetUserProfile(username)
+	if err != nil {
+		return false
+	}
+	return prof.Role == "admin"
+}
 
 // CheckUserCanViewAIInfo checks if a username has permission to view AI quota and email
 func (s *ServerApp) CheckUserCanViewAIInfo(username string) bool {
@@ -315,7 +338,9 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 				prof.CanViewAIInfo = &f
 			}
 		}
-		sendJSON(w, http.StatusOK, prof)
+		safeProf := prof
+		safeProf.Password = ""
+		sendJSON(w, http.StatusOK, safeProf)
 		return
 	}
 
@@ -364,6 +389,21 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 		}
 
 		profilePath := filepath.Join(userDir, "profile.json")
+		if existingData, err := os.ReadFile(profilePath); err == nil {
+			var existingProf UserProfile
+			if json.Unmarshal(existingData, &existingProf) == nil {
+				if prof.Password == "" {
+					prof.Password = existingProf.Password
+				}
+				if prof.Sessions == nil {
+					prof.Sessions = existingProf.Sessions
+				}
+				if prof.AuthProviders == nil {
+					prof.AuthProviders = existingProf.AuthProviders
+				}
+			}
+		}
+
 		data, err := json.MarshalIndent(prof, "", "  ")
 		if err != nil {
 			sendError(w, http.StatusInternalServerError, "Failed to serialize profile: "+err.Error())
@@ -375,7 +415,9 @@ func (s *ServerApp) handleUserProfile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sendJSON(w, http.StatusOK, prof)
+		safeProf := prof
+		safeProf.Password = ""
+		sendJSON(w, http.StatusOK, safeProf)
 		return
 	}
 
@@ -615,6 +657,7 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 		Model             string                   `json:"model"`
 		SystemInstruction string                   `json:"systemInstruction"`
 		EnableVaultTools  *bool                    `json:"enableVaultTools"`
+		Username          string                   `json:"username"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -625,6 +668,26 @@ func (s *ServerApp) handleChat(w http.ResponseWriter, r *http.Request) {
 	msg := strings.TrimSpace(body.Message)
 	if msg == "" {
 		sendError(w, http.StatusBadRequest, "Message cannot be empty.")
+		return
+	}
+
+	// Kiểm tra quyền quản trị cho các lệnh can thiệp hệ thống (.b5, .b6, .g)
+	callerToken := s.GetTokenFromRequest(r)
+	callerUsername := s.GetUserFromToken(callerToken)
+	if callerUsername == "" {
+		callerUsername = strings.ToLower(strings.TrimSpace(body.Username))
+	}
+	if callerUsername == "" {
+		callerUsername = "qtu"
+	}
+
+	trimmedMsg := strings.ToLower(msg)
+	if (trimmedMsg == ".b5" || trimmedMsg == ".b6" || trimmedMsg == ".g") && !s.CheckUserIsAdmin(callerUsername) {
+		sendJSON(w, http.StatusOK, map[string]interface{}{
+			"type":      "chat",
+			"text":      fmt.Sprintf("[X] Lệnh '%s' chỉ khả dụng cho tài khoản Quản trị viên (qtu).", msg),
+			"tool_logs": []interface{}{},
+		})
 		return
 	}
 
@@ -855,6 +918,7 @@ func main() {
 		Port:   *portFlag,
 		Host:   *hostFlag,
 	}
+	app.InitSessions()
 
 	mux := http.NewServeMux()
 
@@ -872,6 +936,11 @@ func main() {
 	mux.HandleFunc("/api/chat", app.handleChat)
 	mux.HandleFunc("/api/user/profile", app.handleUserProfile)
 	mux.HandleFunc("/api/users/list", app.handleUsersList)
+	mux.HandleFunc("/api/auth/login", app.handleAuthLogin)
+	mux.HandleFunc("/api/auth/social-login", app.handleAuthSocialLogin)
+	mux.HandleFunc("/api/auth/me", app.handleAuthMe)
+	mux.HandleFunc("/api/auth/logout", app.handleAuthLogout)
+	mux.HandleFunc("/api/auth/oauth-config", app.handleOAuthConfig)
 	mux.HandleFunc("/api/auth/accounts", app.handleAuthAccounts)
 	mux.HandleFunc("/api/auth/switch", app.handleAuthSwitch)
 

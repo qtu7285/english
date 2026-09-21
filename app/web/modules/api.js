@@ -6,7 +6,10 @@ import { state } from './state.js';
 export async function syncUserProfileFromServer(targetUser = null) {
   try {
     const u = (targetUser || state.username || "qtu").trim().toLowerCase();
-    const res = await fetch(`/api/user/profile?username=${encodeURIComponent(u)}`);
+    const token = localStorage.getItem("english_session_token");
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    const res = await fetch(`/api/user/profile?username=${encodeURIComponent(u)}`, { headers });
     if (!res.ok) return null;
     const data = await res.json();
     if (data.username) state.username = data.username;
@@ -25,7 +28,7 @@ export async function syncUserProfileFromServer(targetUser = null) {
     localStorage.setItem("avatar_ai", state.avatarAI);
     localStorage.setItem("avatar_target", state.avatarTarget);
     localStorage.setItem("show_chat_avatars", state.showChatAvatars);
-    localStorage.setItem("user_role", state.role || "learner");
+    localStorage.setItem("user_role", state.role || "user");
     localStorage.setItem("can_view_ai_info", state.canViewAIInfo);
     localStorage.setItem("ai_engine", state.engine);
     localStorage.setItem("gemini_model", state.model);
@@ -40,9 +43,12 @@ export async function syncUserProfileFromServer(targetUser = null) {
 
 export async function saveUserProfileToServer(profile) {
   try {
+    const token = localStorage.getItem("english_session_token");
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     const res = await fetch("/api/user/profile", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(profile)
     });
     return res.ok;
@@ -55,7 +61,10 @@ export async function saveUserProfileToServer(profile) {
 export async function fetchQuotaFromServer() {
   try {
     const u = (state.username || "qtu").trim().toLowerCase();
-    const res = await fetch(`/api/quota?username=${encodeURIComponent(u)}`);
+    const token = localStorage.getItem("english_session_token");
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    const res = await fetch(`/api/quota?username=${encodeURIComponent(u)}`, { headers });
     if (!res.ok) return null;
     const data = await res.json();
     if (data && data.available) {
@@ -71,10 +80,17 @@ export async function fetchQuotaFromServer() {
 }
 
 export async function sendChatMessageToAPI(body) {
+  const token = localStorage.getItem("english_session_token");
+  const headers = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const payload = {
+    username: state.username || "qtu",
+    ...body
+  };
   const res = await fetch("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
+    headers,
+    body: JSON.stringify(payload)
   });
   return res;
 }

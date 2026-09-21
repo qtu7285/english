@@ -1917,3 +1917,249 @@ body {
 .account-switch-btn:hover {
   opacity: 0.9;
 }
+
+/* User Badge Button in Header */
+.user-badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 4px 10px 4px 6px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  touch-action: manipulation;
+}
+
+.user-badge-btn:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: var(--primary);
+}
+
+.user-badge-avatar {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.user-badge-name {
+  font-weight: 600;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-badge-role {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+}
+
+.user-badge-role.admin {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.user-badge-role.user {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+/* Drawer Logout Button */
+.drawer-logout-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.drawer-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+}
+
+/* Login Modal & Social Login */
+.login-modal-card {
+  max-width: 420px;
+}
+
+.login-modal-body {
+  padding: 20px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-quick-select {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-section-lbl {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.login-quick-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.quick-user-btn {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.quick-user-btn:hover {
+  border-color: var(--primary);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.quick-user-btn.active {
+  border-color: var(--primary);
+  background: rgba(56, 189, 248, 0.15);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+}
+
+.quick-user-avatar {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.quick-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quick-user-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.quick-user-tag {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.quick-user-tag.admin {
+  color: #fbbf24;
+}
+
+.quick-user-tag.user {
+  color: #38bdf8;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-block {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.login-error-msg {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 4px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.login-divider span {
+  padding: 0 10px;
+  text-transform: lowercase;
+  opacity: 0.8;
+}
+
+.login-social-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+.social-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.social-btn.google-btn:hover {
+  border-color: #4285F4;
+}
+
+.social-btn.facebook-btn:hover {
+  border-color: #1877F2;
+}
